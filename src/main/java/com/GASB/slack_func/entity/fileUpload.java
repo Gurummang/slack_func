@@ -9,13 +9,13 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
-@Table(indexes = @Index(name = "idx_file_id", columnList = "SaasFileId", unique = true))
+@Table(indexes = @Index(name = "idx_saas_file_id", columnList = "saasFileId", unique = true))
 public class fileUpload {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private int orgSaaSId;
-    private String SaasFileId;
+    private String saasFileId;
     private String hash;
     private LocalDateTime timestamp;
 }
