@@ -9,7 +9,6 @@ import com.slack.api.Slack;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.methods.request.files.FilesListRequest;
 import com.slack.api.methods.response.files.FilesListResponse;
-import com.slack.api.model.File;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -31,7 +30,7 @@ public class SlackFileService {
     private static final Logger logger = LoggerFactory.getLogger(SlackFileService.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public SlackFileService(@Value("${slack.token}") String token, SlackFileRepository storedFilesRepository, FileUploadRepository fileUploadRepository) {
+    public SlackFileService( SlackFileRepository storedFilesRepository, FileUploadRepository fileUploadRepository) {
 //        this.token = token;
         this.slack = Slack.getInstance();
         this.storedFilesRepository = storedFilesRepository;
@@ -73,6 +72,7 @@ public class SlackFileService {
         logger.info("Successfully fetched files list from Slack.");
 
         List<storedFiles> storedFilesList = response.getFiles().stream()
+                .filter(file->!storedFilesRepository.findByFileId(file.getId()).isPresent())
                 .map(file -> {
                     storedFiles sf = new storedFiles();
                     sf.setFileId(file.getId());
@@ -81,7 +81,8 @@ public class SlackFileService {
                     sf.setSize(file.getSize());
                     sf.setType(file.getFiletype());
                     sf.setFileName(file.getName());
-                    sf.setSavePath(file.getUrlPrivateDownload());
+//                    sf.setSavePath(file.getUrlPrivateDownload());
+                    sf.setSavePath(null);
                     return sf;
                 })
                 .collect(Collectors.toList());
@@ -89,6 +90,7 @@ public class SlackFileService {
         storedFilesRepository.saveAll(storedFilesList);
 
         List<fileUpload> fileUploadList = response.getFiles().stream()
+                .filter(file->!fileUploadRepository.findBySaaSFileId(file.getId()).isPresent())
                 .map(file -> {
                     fileUpload fu = new fileUpload();
                     fu.setOrgSaaSId(1); // Example value, replace with actual value
