@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Service
 public class SlackFileService {
 
-    private final String token = "";
+    private final String token = ""; // Token은 추후에 db에서 받아오도록 수정
     private final Slack slack;
     private final SlackFileRepository storedFilesRepository;
     private final FileUploadRepository fileUploadRepository;
@@ -90,12 +90,12 @@ public class SlackFileService {
         storedFilesRepository.saveAll(storedFilesList);
 
         List<fileUpload> fileUploadList = response.getFiles().stream()
-                .filter(file->!fileUploadRepository.findBySaaSFileId(file.getId()).isPresent())
+                .filter(file->!fileUploadRepository.findBySaasFileId(file.getId()).isPresent())
                 .map(file -> {
                     fileUpload fu = new fileUpload();
-                    fu.setOrgSaaSId(1); // Example value, replace with actual value
+                    fu.setOrgSaaSId(1); // 추후에 org_saas_id테이블에서 얻어 오도록 수정 필요
                     fu.setSaasFileId(file.getId());
-//                    fu.setHash(file.getHash());
+//                    fu.setHash(file.getHash()); // 파일 다운로드 기능 추가 이후 해시값 계산 기능 추가 예정
                     fu.setHash(null);
                     fu.setTimestamp(LocalDateTime.now());
                     return fu;
