@@ -21,8 +21,8 @@ public class MonitoredUsers {
 
     private String userId;
     private int orgSaaSId;
-    private String email; // 필드명 수정: Email -> email
-    private String userName; // 필드명 수정: UserName -> userName
+    private String email;
+    private String userName;
     private LocalDateTime timestamp;
 
     @Builder

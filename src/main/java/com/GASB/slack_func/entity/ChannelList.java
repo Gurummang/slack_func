@@ -17,8 +17,8 @@ public class ChannelList {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String channelId; // 필드명 수정: ChannelId -> channelId
-    private String channelName; // 필드명 수정: ChannelName -> channelName
+    private String channelId;
+    private String channelName;
 
     @Builder
     public ChannelList(String channelId, String channelName) {
