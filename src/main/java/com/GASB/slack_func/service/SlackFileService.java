@@ -9,6 +9,7 @@ import com.slack.api.Slack;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.methods.request.files.FilesListRequest;
 import com.slack.api.methods.response.files.FilesListResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,15 +23,15 @@ import java.util.stream.Collectors;
 @Service
 public class SlackFileService {
 
-    private final String token = ""; // Token은 추후에 db에서 받아오도록 수정
+    private final String token;
     private final Slack slack;
     private final SlackFileRepository storedFilesRepository;
     private final FileUploadRepository fileUploadRepository;
     private static final Logger logger = LoggerFactory.getLogger(SlackFileService.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public SlackFileService( SlackFileRepository storedFilesRepository, FileUploadRepository fileUploadRepository) {
-//        this.token = token;
+    public SlackFileService(@Value("${slack.token}") String token, SlackFileRepository storedFilesRepository, FileUploadRepository fileUploadRepository) {
+        this.token = token;
         this.slack = Slack.getInstance();
         this.storedFilesRepository = storedFilesRepository;
         this.fileUploadRepository = fileUploadRepository;
