@@ -1,21 +1,36 @@
 package com.GASB.slack_func.entity;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
-@Entity
 @Getter
-@Setter
-@Table(indexes = @Index(name = "idx_file_id", columnList = "fileId", unique = true))
+@NoArgsConstructor
+@Entity
 public class storedFiles {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
+
     private String fileId;
-    private String hash;
+
+    @Column(columnDefinition = "TEXT", nullable = true) //원래는 false가 맞음
+    private String saltedHash;
+
     private int size;
     private String type;
-    private String fileName;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String savePath;
+
+    @Builder
+    public storedFiles(long id, String fileId, String saltedHash, int size, String type, String savePath){
+        this.id = id;
+        this.fileId = fileId;
+        this.saltedHash = saltedHash;
+        this.size = size;
+        this.type = type;
+        this.savePath = savePath;
+    }
 }
