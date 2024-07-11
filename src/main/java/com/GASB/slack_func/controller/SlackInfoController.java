@@ -7,9 +7,12 @@ import com.GASB.slack_func.service.SlackUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/slack")
@@ -18,8 +21,7 @@ public class SlackInfoController {
     private final SlackChannelService slackChannelService;
     private final SlackUserService slackUserService;
     private final SlackSpaceInfoService slackSpaceInfoService;
-
-    private SlackFileService slackFileService;
+    private final SlackFileService slackFileService;
 
     @Autowired
     public SlackInfoController(SlackChannelService slackChannelService,
@@ -32,44 +34,83 @@ public class SlackInfoController {
         this.slackFileService = slackFileService;
     }
 
-    @GetMapping("/channels")
-    public ResponseEntity<String> fetchConversations() {
+    @PostMapping("/channels")
+    public ResponseEntity<Map<String, String>> fetchAndSaveChannels() {
+        Map<String, String> response = new HashMap<>();
         try {
             slackChannelService.slackFirstChannels();
-            return ResponseEntity.ok("Conversations fetched and processed successfully");
+            response.put("status", "success");
+            response.put("message", "Channels saved successfully");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching conversations");
+            response.put("status", "error");
+            response.put("message", "Error fetching conversations");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
-    @GetMapping("/users")
-    public ResponseEntity<String> fetchUsers() {
+    @PostMapping("/users")
+    public ResponseEntity<Map<String, String>> fetchAndSaveUsers() {
+        Map<String, String> response = new HashMap<>();
         try {
             slackUserService.slackFirstUsers();
-            return ResponseEntity.ok("Users fetched and processed successfully");
+            response.put("status", "success");
+            response.put("message", "Users saved successfully");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching users");
+            response.put("status", "error");
+            response.put("message", "Error fetching users");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
-    @GetMapping("/team")
-    public ResponseEntity<String> fetchTeamInfo() {
-        try{
-            slackSpaceInfoService.slackSpaceRegister();
-            return ResponseEntity.ok("Team info fetched and processed successfully");
-        } catch (Exception e){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching team info");
-        }
-    }
-
-    @GetMapping("/files")
-    public ResponseEntity<String> fetchFiles() {
+    @PostMapping("/files")
+    public ResponseEntity<Map<String, String>> fetchAndSaveFiles() {
+        Map<String, String> response = new HashMap<>();
         try {
             slackFileService.fetchAndStoreFiles();
             slackFileService.uploadFiles();
-            return ResponseEntity.ok("Files fetched and processed successfully");
+            response.put("status", "success");
+            response.put("message", "Files saved successfully");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching files");
+            response.put("status", "error");
+            response.put("message", "Error fetching files");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @PostMapping("/space")
+    public ResponseEntity<Map<String, String>> fetchAndSaveSpaceInfo() {
+        Map<String, String> response = new HashMap<>();
+        try {
+            slackSpaceInfoService.slackSpaceRegister();
+            response.put("status", "success");
+            response.put("message", "Space info saved successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Error fetching space info");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @PostMapping("/all")
+    public ResponseEntity<Map<String, String>> fetchAndSaveAll() {
+        Map<String, String> response = new HashMap<>();
+        try {
+            slackChannelService.slackFirstChannels();
+            slackUserService.slackFirstUsers();
+            slackSpaceInfoService.slackSpaceRegister();
+            slackFileService.fetchAndStoreFiles();
+            slackFileService.uploadFiles();
+            response.put("status", "success");
+            response.put("message", "All data saved successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Error fetching all data");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }
