@@ -3,8 +3,11 @@ package com.GASB.slack_func.service;
 import com.slack.api.Slack;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.methods.response.conversations.ConversationsListResponse;
+import com.slack.api.methods.response.team.TeamInfoResponse;
+import com.slack.api.methods.response.team.TeamPreferencesListResponse;
 import com.slack.api.methods.response.users.UsersListResponse;
 import com.slack.api.model.Conversation;
+import com.slack.api.model.Team;
 import com.slack.api.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -45,4 +48,28 @@ public class SlackApiService {
     // files.list API호출 메서드
 
     // team.info API호출 메서드
+    public Team fetchTeamInfo() throws IOException, SlackApiException {
+        TeamInfoResponse teamInfoResponse = slack.methods(token).teamInfo(r -> r);
+        if (teamInfoResponse.isOk()) {
+            return teamInfoResponse.getTeam();
+        } else {
+            throw new RuntimeException("Error fetching users: " + teamInfoResponse.getError());
+        }
+    }
+
+//    public List<Team> fetchTeamInfo() throws IOException, SlackApiException {
+//        try {
+//            TeamPreferencesListResponse teamPreferencesListResponse = slack.methods(token).teamPreferencesList(r -> r);
+//            if (teamPreferencesListResponse.isOk()) {
+//                return teamPreferencesListResponse.getTeam();
+//            } else {
+//                logger.error("Error fetching team info: {}", teamPreferencesListResponse.getError());
+//                throw new SlackApiException("Error fetching team info: " + teamPreferencesListResponse.getError(), null);
+//            }
+//        } catch (IOException | SlackApiException e) {
+//            logger.error("Exception while fetching team info", e);
+//            throw e; // re-throw the exception after logging it
+//        }
+//    }
+
 }
