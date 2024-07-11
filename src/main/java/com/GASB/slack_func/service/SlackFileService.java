@@ -2,8 +2,8 @@ package com.GASB.slack_func.service;
 
 import com.GASB.slack_func.entity.storedFiles;
 import com.GASB.slack_func.entity.fileUpload;
-import com.GASB.slack_func.repository.SlackFileRepository;
-import com.GASB.slack_func.repository.FileUploadRepository;
+import com.GASB.slack_func.repository.files.SlackFileRepository;
+import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.slack.api.Slack;
 import com.slack.api.methods.SlackApiException;
@@ -23,15 +23,15 @@ import java.util.stream.Collectors;
 @Service
 public class SlackFileService {
 
-    private final String token = ""; // Token은 추후에 db에서 받아오도록 수정
+    private final String token;
     private final Slack slack;
     private final SlackFileRepository storedFilesRepository;
     private final FileUploadRepository fileUploadRepository;
     private static final Logger logger = LoggerFactory.getLogger(SlackFileService.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public SlackFileService( SlackFileRepository storedFilesRepository, FileUploadRepository fileUploadRepository) {
-//        this.token = token;
+    public SlackFileService(@Value("${slack.token}") String token, SlackFileRepository storedFilesRepository, FileUploadRepository fileUploadRepository) {
+        this.token = token;
         this.slack = Slack.getInstance();
         this.storedFilesRepository = storedFilesRepository;
         this.fileUploadRepository = fileUploadRepository;
