@@ -1,4 +1,4 @@
-package com.GASB.slack_func.repository;
+package com.GASB.slack_func.repository.channel;
 
 import com.GASB.slack_func.dto.SlackChannelDto;
 

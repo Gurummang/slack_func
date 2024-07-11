@@ -2,7 +2,7 @@ package com.GASB.slack_func.service;
 
 import com.GASB.slack_func.dto.SlackChannelDto;
 import com.GASB.slack_func.mapper.SlackChannelMapper;
-import com.GASB.slack_func.repository.SlackChannelRepository;
+import com.GASB.slack_func.repository.channel.SlackChannelRepository;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.model.Conversation;
 import lombok.extern.slf4j.Slf4j;

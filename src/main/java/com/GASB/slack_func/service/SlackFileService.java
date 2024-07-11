@@ -2,14 +2,13 @@ package com.GASB.slack_func.service;
 
 import com.GASB.slack_func.entity.storedFiles;
 import com.GASB.slack_func.entity.fileUpload;
-import com.GASB.slack_func.repository.SlackFileRepository;
-import com.GASB.slack_func.repository.FileUploadRepository;
+import com.GASB.slack_func.repository.files.SlackFileRepository;
+import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.slack.api.Slack;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.methods.request.files.FilesListRequest;
 import com.slack.api.methods.response.files.FilesListResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
