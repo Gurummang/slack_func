@@ -16,13 +16,16 @@ public class SpaceList {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    private int saasId;
     private String spaceId;
     private String spaceName;
+    private String spaceUrl;
 
     @Builder
-    public SpaceList(String spaceId, String spaceName) {
+    public SpaceList(int saasId, String spaceId, String spaceName, String spaceUrl) {
+        this.saasId = saasId;
         this.spaceId = spaceId;
         this.spaceName = spaceName;
+        this.spaceUrl = spaceUrl;
     }
 }
