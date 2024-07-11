@@ -1,6 +1,7 @@
 package com.GASB.slack_func.controller;
 
 import com.GASB.slack_func.service.SlackChannelService;
+import com.GASB.slack_func.service.SlackFileService;
 import com.GASB.slack_func.service.SlackSpaceInfoService;
 import com.GASB.slack_func.service.SlackUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,13 +19,17 @@ public class SlackInfoController {
     private final SlackUserService slackUserService;
     private final SlackSpaceInfoService slackSpaceInfoService;
 
+    private SlackFileService slackFileService;
+
     @Autowired
     public SlackInfoController(SlackChannelService slackChannelService,
                                SlackUserService slackUserService,
-                               SlackSpaceInfoService slackSpaceInfoService) {
+                               SlackSpaceInfoService slackSpaceInfoService,
+                               SlackFileService slackFileService) {
         this.slackChannelService = slackChannelService;
         this.slackUserService = slackUserService;
         this.slackSpaceInfoService = slackSpaceInfoService;
+        this.slackFileService = slackFileService;
     }
 
     @GetMapping("/channels")
@@ -54,6 +59,17 @@ public class SlackInfoController {
             return ResponseEntity.ok("Team info fetched and processed successfully");
         } catch (Exception e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching team info");
+        }
+    }
+
+    @GetMapping("/files")
+    public ResponseEntity<String> fetchFiles() {
+        try {
+            slackFileService.fetchAndStoreFiles();
+            slackFileService.uploadFiles();
+            return ResponseEntity.ok("Files fetched and processed successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching files");
         }
     }
 }
