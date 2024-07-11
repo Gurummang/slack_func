@@ -16,7 +16,6 @@ public class ChannelList {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String channelId;
     private String channelName;
 

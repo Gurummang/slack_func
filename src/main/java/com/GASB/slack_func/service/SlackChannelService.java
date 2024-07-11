@@ -29,8 +29,9 @@ public class SlackChannelService {
     public void slackFirstChannels() {
         try {
             List<Conversation> conversations = slackApiService.fetchConversations();
-            List<SlackChannelDto> channelDtos = slackChannelMapper.toDto(conversations);
-            slackChannelRepository.saveChannelList(channelDtos);
+//            List<SlackChannelDto> channelDtos = slackChannelMapper.toDto(conversations);
+//            slackChannelRepository.saveChannelList(channelDtos);
+            slackChannelRepository.saveAll(slackChannelMapper.toEntity(conversations));
         } catch (IOException | SlackApiException e) {
             e.printStackTrace();
             log.error("Error fetching conversations", e);

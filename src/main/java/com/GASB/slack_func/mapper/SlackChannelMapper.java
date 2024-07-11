@@ -30,12 +30,9 @@ public class SlackChannelMapper {
     }
 
     // Conversation 객체 리스트를 ChannelList 엔티티 리스트로 변환
-    // 예상 리턴값: List<ChannelList> 객체
     public List<ChannelList> toEntity(List<Conversation> conversations) {
         return conversations.stream()
                 .map(this::toEntity)
                 .collect(Collectors.toList());
     }
-
-
 }
