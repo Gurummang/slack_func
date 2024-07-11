@@ -30,11 +30,9 @@ public class SlackUserService {
         try {
             List<User> slackUsers = slackApiService.fetchUsers();
             int orgSaaSId = 1; // 예시로 고정값 사용, 실제로는 orgSaaSService를 통해 가져올 수 있습니다.
-            List<SlackUserDto> userDtos = slackUserMapper.toUserDto(slackUsers, orgSaaSId);
-            List<MonitoredUsers> monitoredUsers = slackUserMapper.toUserEntity(userDtos);
-            slackUserRepo.saveAllUsers(monitoredUsers);
+            List<MonitoredUsers> monitoredUsers = slackUserMapper.toEntity(slackUsers, orgSaaSId);
+            slackUserRepo.saveAll(monitoredUsers);
         } catch (Exception e) {
-            e.printStackTrace();
             log.error("Error fetching users", e);
         }
     }

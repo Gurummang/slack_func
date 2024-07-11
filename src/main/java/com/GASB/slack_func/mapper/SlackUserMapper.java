@@ -1,6 +1,5 @@
 package com.GASB.slack_func.mapper;
 
-import com.GASB.slack_func.dto.SlackUserDto;
 import com.GASB.slack_func.entity.MonitoredUsers;
 import com.slack.api.model.User;
 import org.springframework.stereotype.Component;
@@ -11,39 +10,23 @@ import java.util.stream.Collectors;
 @Component
 public class SlackUserMapper {
 
-    // User -> SlackUserDto
-    public SlackUserDto toUserDto(User user, int orgSaaSId) {
-        return new SlackUserDto(
-                user.getId(),
-                orgSaaSId,
-                user.getProfile().getEmail(),
-                user.getProfile().getRealName(),
-                user.getUpdated()
-        );
-    }
-
-    // List<User> -> List<SlackUserDto>
-    public List<SlackUserDto> toUserDto(List<User> users, int orgSaaSId) {
-        return users.stream()
-                .map(user -> toUserDto(user, orgSaaSId))
-                .collect(Collectors.toList());
-    }
-
-    // SlackUserDto -> MonitoredUsers
-    public MonitoredUsers toUserEntity(SlackUserDto dto) {
+    // User 객체를 MonitoredUsers 엔티티로 변환
+    public MonitoredUsers toEntity(User user, int orgSaaSId) {
+        if (user == null) {
+            return null;
+        }
         return MonitoredUsers.builder()
-                .userId(dto.getId())
-                .orgSaaSId(dto.getOrgSaaSId())
-                .email(dto.getEmail())
-                .userName(dto.getUserName())
-                .timestamp(dto.getTimestamp())
+                .orgSaaSId(orgSaaSId)
+                .userId(user.getId())
+                .userName(user.getRealName())
+                .email(user.getProfile().getEmail())
                 .build();
     }
 
-    // List<SlackUserDto> -> List<MonitoredUsers>
-    public List<MonitoredUsers> toUserEntity(List<SlackUserDto> dtos) {
-        return dtos.stream()
-                .map(this::toUserEntity)
+    // User 리스트를 MonitoredUsers 엔티티 리스트로 변환
+    public List<MonitoredUsers> toEntity(List<User> users, int orgSaaSId) {
+        return users.stream()
+                .map(user -> toEntity(user, orgSaaSId))
                 .collect(Collectors.toList());
     }
 }
