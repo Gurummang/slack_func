@@ -8,8 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Getter
 @NoArgsConstructor
@@ -23,10 +21,10 @@ public class MonitoredUsers {
     private int orgSaaSId;
     private String email;
     private String userName;
-    private LocalDateTime timestamp;
+    private Long timestamp;
 
     @Builder
-    public MonitoredUsers(String userId, int orgSaaSId, String email, String userName, LocalDateTime timestamp) {
+    public MonitoredUsers(String userId, int orgSaaSId, String email, String userName, Long timestamp) {
         this.userId = userId;
         this.orgSaaSId = orgSaaSId;
         this.email = email;
