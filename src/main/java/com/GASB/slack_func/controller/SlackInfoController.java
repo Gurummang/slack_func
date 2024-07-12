@@ -69,7 +69,6 @@ public class SlackInfoController {
         Map<String, String> response = new HashMap<>();
         try {
             slackFileService.fetchAndStoreFiles();
-//            slackFileService.uploadFiles();
             response.put("status", "success");
             response.put("message", "Files saved successfully");
             return ResponseEntity.ok(response);
@@ -103,7 +102,6 @@ public class SlackInfoController {
             slackUserService.slackFirstUsers();
             slackSpaceInfoService.slackSpaceRegister();
             slackFileService.fetchAndStoreFiles();
-//            slackFileService.uploadFiles();
             response.put("status", "success");
             response.put("message", "All data saved successfully");
             return ResponseEntity.ok(response);
