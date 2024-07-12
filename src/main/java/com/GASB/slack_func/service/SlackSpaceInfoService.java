@@ -40,4 +40,17 @@ public class SlackSpaceInfoService {
         }
     }
 
+    public String getCurrentSpaceName() {
+        Team slackTeam = null;
+        try {
+            slackTeam = slackApiService.fetchTeamInfo();
+        } catch (IOException | SlackApiException e) {
+            log.error("Error fetching team info", e);
+        } catch (Exception e) {
+            log.error("Unexpected error occurred", e);
+        }
+
+        return slackTeam.getName();
+    }
+
 }

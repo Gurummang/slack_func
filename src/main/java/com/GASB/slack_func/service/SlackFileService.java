@@ -37,24 +37,28 @@ public class SlackFileService {
     private final FileUploadRepository fileUploadRepository;
     private final SlackChannelRepository slackChannelRepository;
     private final SlackUserRepo slackUserRepo;
+    private final SlackSpaceInfoService slackSpaceInfoService;
 
     public SlackFileService(SlackApiService slackApiService,
                             SlackFileRepository storedFilesRepository,
                             SlackFileMapper slackFileMapper,
                             FileUploadRepository fileUploadRepository,
                             SlackChannelRepository slackChannelRepository,
-                            SlackUserRepo slackUserRepo) {
+                            SlackUserRepo slackUserRepo,
+                            SlackSpaceInfoService slackSpaceInfoService) {
         this.slackApiService = slackApiService;
         this.storedFilesRepository = storedFilesRepository;
         this.slackFileMapper = slackFileMapper;
         this.fileUploadRepository = fileUploadRepository;
         this.slackChannelRepository = slackChannelRepository;
         this.slackUserRepo = slackUserRepo;
+        this.slackSpaceInfoService = slackSpaceInfoService;
     }
 
     public void fetchAndStoreFiles() {
         try {
             List<File> fileList = fetchFileList();
+            String workspaceName = slackSpaceInfoService.getCurrentSpaceName();
             for (File file : fileList) {
                 byte[] fileData = downloadFile(file.getUrlPrivateDownload());
                 String hash = calculateHash(fileData);
@@ -63,7 +67,7 @@ public class SlackFileService {
                 String channelId = file.getChannels().isEmpty() ? null : file.getChannels().get(0);
                 String userId = file.getUser();
 
-                String workspaceName = "workspace"; // 실제로는 Slack API를 통해 workspace 이름을 가져오세요.
+
                 String channelName = fetchChannelName(channelId);
                 String uploadedUserName = fetchUserName(userId);
 
