@@ -5,7 +5,6 @@ import com.GASB.slack_func.entity.storedFiles;
 import com.slack.api.model.File;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -39,7 +38,7 @@ public class SlackFileMapper {
         fileUpload.setOrgSaaSId(orgSaaSId);
         fileUpload.setSaasFileId(file.getId());
         fileUpload.setHash(Hash);
-        fileUpload.setTimestamp(LocalDateTime.now());
+        fileUpload.setTimestamp(file.getTimestamp());
         return fileUpload;
     }
 
