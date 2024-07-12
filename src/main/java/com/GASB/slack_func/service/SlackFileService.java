@@ -1,10 +1,8 @@
 package com.GASB.slack_func.service;
 
-import com.GASB.slack_func.entity.ChannelList;
-import com.GASB.slack_func.entity.MonitoredUsers;
-import com.GASB.slack_func.entity.fileUpload;
-import com.GASB.slack_func.entity.storedFiles;
-import com.GASB.slack_func.entity.Activities;
+
+import com.GASB.slack_func.dto.SlackRecentFileDTO;
+import com.GASB.slack_func.entity.*;
 import com.GASB.slack_func.mapper.SlackFileMapper;
 import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.channel.SlackChannelRepository;
@@ -25,8 +23,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -72,7 +74,7 @@ public class SlackFileService {
                 String userId = file.getUser();
 
                 String channelName = fetchChannelName(channelId);
-                    String uploadedUserName = fetchUserName(userId);
+                String uploadedUserName = fetchUserName(userId);
 
                 String filePath = saveFileToLocal(fileData, workspaceName, channelName, uploadedUserName, file.getName());
 
@@ -91,7 +93,6 @@ public class SlackFileService {
             log.error("Error processing files", e);
         }
     }
-
     protected List<File> fetchFileList() throws IOException, SlackApiException {
         return slackApiService.fetchFiles();
     }
@@ -135,5 +136,28 @@ public class SlackFileService {
         if (userId == null) return "unknown_user";
         Optional<MonitoredUsers> user = slackUserRepo.findByUserId(userId);
         return user.map(MonitoredUsers::getUserName).orElse("unknown_user");
+    }
+
+    public List<SlackRecentFileDTO> slackRecentFiles() {
+        List<fileUpload> recentFileUploads = fileUploadRepository.findTop10ByOrderByTimestampDesc();
+
+        return recentFileUploads.stream().map(upload -> {
+            Optional<storedFiles> storedFileOpt = storedFilesRepository.findByFileId(upload.getSaasFileId());
+            Optional<Activities> activityOpt = activitiesRepository.findBysaasFileId(upload.getSaasFileId());
+            if (storedFileOpt.isPresent() && activityOpt.isPresent()) {
+                storedFiles storedFile = storedFileOpt.get();
+                Activities activity = activityOpt.get();
+                Optional<MonitoredUsers> userOpt = slackUserRepo.findByUserId(activity.getUserId());
+                String uploadedBy = userOpt.map(MonitoredUsers::getUserName).orElse("Unknown User");
+
+                return SlackRecentFileDTO.builder()
+                        .fileName(activity.getFileName())
+                        .uploadedBy(uploadedBy)
+                        .fileType(storedFile.getType())
+                        .uploadTimestamp(LocalDateTime.ofInstant(Instant.ofEpochSecond(upload.getTimestamp()), ZoneId.systemDefault()))
+                        .build();
+            }
+            return null;
+        }).filter(dto -> dto != null).collect(Collectors.toList());
     }
 }
