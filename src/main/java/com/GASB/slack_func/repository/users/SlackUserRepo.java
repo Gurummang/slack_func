@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long> , SlackUserIF{
     Optional<MonitoredUsers> findByUserId(String userId);
+    String findUserNameByUserId(String userId);
 }

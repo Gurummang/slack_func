@@ -1,11 +1,12 @@
 package com.GASB.slack_func.service;
 
-
 import com.GASB.slack_func.entity.ChannelList;
 import com.GASB.slack_func.entity.MonitoredUsers;
 import com.GASB.slack_func.entity.fileUpload;
 import com.GASB.slack_func.entity.storedFiles;
+import com.GASB.slack_func.entity.Activities;
 import com.GASB.slack_func.mapper.SlackFileMapper;
+import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.channel.SlackChannelRepository;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.files.SlackFileRepository;
@@ -38,6 +39,7 @@ public class SlackFileService {
     private final SlackChannelRepository slackChannelRepository;
     private final SlackUserRepo slackUserRepo;
     private final SlackSpaceInfoService slackSpaceInfoService;
+    private final FileActivityRepo activitiesRepository;
 
     public SlackFileService(SlackApiService slackApiService,
                             SlackFileRepository storedFilesRepository,
@@ -45,7 +47,8 @@ public class SlackFileService {
                             FileUploadRepository fileUploadRepository,
                             SlackChannelRepository slackChannelRepository,
                             SlackUserRepo slackUserRepo,
-                            SlackSpaceInfoService slackSpaceInfoService) {
+                            SlackSpaceInfoService slackSpaceInfoService,
+                            FileActivityRepo activitiesRepository) {
         this.slackApiService = slackApiService;
         this.storedFilesRepository = storedFilesRepository;
         this.slackFileMapper = slackFileMapper;
@@ -53,6 +56,7 @@ public class SlackFileService {
         this.slackChannelRepository = slackChannelRepository;
         this.slackUserRepo = slackUserRepo;
         this.slackSpaceInfoService = slackSpaceInfoService;
+        this.activitiesRepository = activitiesRepository;
     }
 
     public void fetchAndStoreFiles() {
@@ -67,19 +71,20 @@ public class SlackFileService {
                 String channelId = file.getChannels().isEmpty() ? null : file.getChannels().get(0);
                 String userId = file.getUser();
 
-
                 String channelName = fetchChannelName(channelId);
-                String uploadedUserName = fetchUserName(userId);
+                    String uploadedUserName = fetchUserName(userId);
 
                 String filePath = saveFileToLocal(fileData, workspaceName, channelName, uploadedUserName, file.getName());
 
                 storedFiles storedFile = slackFileMapper.toStoredFileEntity(file, hash, filePath);
                 fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, 1, hash);
+                Activities activity = slackFileMapper.toActivityEntity(file,  "file_uploaded");
 
                 if (storedFilesRepository.findByFileId(storedFile.getFileId()).isEmpty()
                         && fileUploadRepository.findBySaasFileId(fileUploadObject.getSaasFileId()).isEmpty()) {
                     storedFilesRepository.save(storedFile);
                     fileUploadRepository.save(fileUploadObject);
+                    activitiesRepository.save(activity);
                 }
             }
         } catch (Exception e) {
