@@ -82,7 +82,7 @@ public class SlackFileService {
                 fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, 1, hash);
                 Activities activity = slackFileMapper.toActivityEntity(file,  "file_uploaded");
 
-                if (storedFilesRepository.findByFileId(storedFile.getFileId()).isEmpty()
+                if (storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty()
                         && fileUploadRepository.findBySaasFileId(fileUploadObject.getSaasFileId()).isEmpty()) {
                     storedFilesRepository.save(storedFile);
                     fileUploadRepository.save(fileUploadObject);
@@ -142,7 +142,7 @@ public class SlackFileService {
         List<fileUpload> recentFileUploads = fileUploadRepository.findTop10ByOrderByTimestampDesc();
 
         return recentFileUploads.stream().map(upload -> {
-            Optional<storedFiles> storedFileOpt = storedFilesRepository.findByFileId(upload.getSaasFileId());
+            Optional<storedFiles> storedFileOpt = storedFilesRepository.findBySaltedHash(upload.getHash());
             Optional<Activities> activityOpt = activitiesRepository.findBysaasFileId(upload.getSaasFileId());
             if (storedFileOpt.isPresent() && activityOpt.isPresent()) {
                 storedFiles storedFile = storedFileOpt.get();
