@@ -8,44 +8,44 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Component
 public class SlackFileMapper {
-
-    public storedFiles toStoredFileEntity(File file) {
+    public storedFiles toStoredFileEntity(File file, String hash, String filePath) {
         if (file == null) {
             return null;
         }
         return storedFiles.builder()
                 .fileId(file.getId())
-                .saltedHash(null) // 필요에 따라 적절한 해시 값을 설정하세요.
+                .saltedHash(hash)
                 .size(file.getSize())
                 .type(file.getFiletype())
-                .savePath(file.getUrlPrivate()) // 지금은 다운로드 경로임. 추후 변경예정
+                .savePath(filePath)
                 .build();
     }
 
-    public List<storedFiles> toStoredFileEntity(List<File> files) {
-        return files.stream()
-                .map(this::toStoredFileEntity)
+    public List<storedFiles> toStoredFileEntity(List<File> files, List<String> hashes, List<String> filePaths) {
+        return IntStream.range(0, files.size())
+                .mapToObj(i -> toStoredFileEntity(files.get(i), hashes.get(i), filePaths.get(i)))
                 .collect(Collectors.toList());
     }
 
-    public fileUpload toFileUploadEntity(File file, int orgSaaSId) {
+    public fileUpload toFileUploadEntity(File file, int orgSaaSId, String Hash) {
         if (file == null) {
             return null;
         }
         fileUpload fileUpload = new fileUpload();
         fileUpload.setOrgSaaSId(orgSaaSId);
         fileUpload.setSaasFileId(file.getId());
-        fileUpload.setHash(null);
+        fileUpload.setHash(Hash);
         fileUpload.setTimestamp(LocalDateTime.now());
         return fileUpload;
     }
 
-    public List<fileUpload> toFileUploadEntity(List<File> files, int orgSaaSId) {
+    public List<fileUpload> toFileUploadEntity(List<File> files, int orgSaaSId,String Hash) {
         return files.stream()
-                .map(file -> toFileUploadEntity(file, orgSaaSId))
+                .map(file -> toFileUploadEntity(file, orgSaaSId, Hash))
                 .collect(Collectors.toList());
     }
 }
