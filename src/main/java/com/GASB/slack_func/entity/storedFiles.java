@@ -13,9 +13,9 @@ public class storedFiles {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    private String fileId;
+//    private String fileId;
 
-    @Column(columnDefinition = "TEXT", nullable = true) //원래는 false가 맞음
+    @Column(columnDefinition = "TEXT", nullable = false) //원래는 false가 맞음
     private String saltedHash;
 
     private int size;
@@ -27,7 +27,7 @@ public class storedFiles {
     @Builder
     public storedFiles(long id, String fileId, String saltedHash, int size, String type, String savePath){
         this.id = id;
-        this.fileId = fileId;
+//        this.fileId = fileId;
         this.saltedHash = saltedHash;
         this.size = size;
         this.type = type;
