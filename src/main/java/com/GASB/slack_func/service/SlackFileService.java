@@ -83,11 +83,11 @@ public class SlackFileService {
         }
     }
 
-    private List<File> fetchFileList() throws IOException, SlackApiException {
+    protected List<File> fetchFileList() throws IOException, SlackApiException {
         return slackApiService.fetchFiles();
     }
 
-    private byte[] downloadFile(String fileUrl) throws IOException {
+    protected byte[] downloadFile(String fileUrl) throws IOException {
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<byte[]> response = restTemplate.getForEntity(fileUrl, byte[].class);
         if (response.getStatusCode() == HttpStatus.OK) {
@@ -97,7 +97,7 @@ public class SlackFileService {
         }
     }
 
-    private String calculateHash(byte[] fileData) throws NoSuchAlgorithmException {
+    protected String calculateHash(byte[] fileData) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest(fileData);
         StringBuilder hexString = new StringBuilder();
@@ -109,20 +109,20 @@ public class SlackFileService {
         return hexString.toString();
     }
 
-    private String saveFileToLocal(byte[] fileData, String workspaceName, String channelName, String uploadedUserName, String fileName) throws IOException {
+    protected String saveFileToLocal(byte[] fileData, String workspaceName, String channelName, String uploadedUserName, String fileName) throws IOException {
         Path filePath = Paths.get("downloaded_files", workspaceName, channelName, uploadedUserName, fileName);
         Files.createDirectories(filePath.getParent());
         Files.write(filePath, fileData);
         return filePath.toString();
     }
 
-    private String fetchChannelName(String channelId) {
+    protected String fetchChannelName(String channelId) {
         if (channelId == null) return "unknown_channel";
         Optional<ChannelList> channel = slackChannelRepository.findByChannelId(channelId);
         return channel.map(ChannelList::getChannelName).orElse("unknown_channel");
     }
 
-    private String fetchUserName(String userId) {
+    protected String fetchUserName(String userId) {
         if (userId == null) return "unknown_user";
         Optional<MonitoredUsers> user = slackUserRepo.findByUserId(userId);
         return user.map(MonitoredUsers::getUserName).orElse("unknown_user");
