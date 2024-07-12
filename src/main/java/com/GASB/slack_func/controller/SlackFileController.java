@@ -3,13 +3,11 @@ package com.GASB.slack_func.controller;
 import com.GASB.slack_func.dto.SlackRecentFileDTO;
 import com.GASB.slack_func.service.SlackFileService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -25,12 +23,12 @@ public class SlackFileController {
 
 
     @PostMapping("/recent")
-    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles() {
+    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles(){
         try {
             List<SlackRecentFileDTO> recentFiles = slackFileService.slackRecentFiles();
             return ResponseEntity.ok(recentFiles);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+            return ResponseEntity.status(500).build();
         }
     }
 }

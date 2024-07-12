@@ -1,14 +1,13 @@
 package com.GASB.slack_func.dto;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
 @Builder
 public class SlackRecentFileDTO {
-    private String fileId;
     private String fileName;
     private String uploadedBy;
     private String fileType;
