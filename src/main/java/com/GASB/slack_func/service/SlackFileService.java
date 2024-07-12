@@ -1,6 +1,7 @@
 package com.GASB.slack_func.service;
 
 
+import com.GASB.slack_func.dto.SlackRecentFileDTO;
 import com.GASB.slack_func.entity.ChannelList;
 import com.GASB.slack_func.entity.MonitoredUsers;
 import com.GASB.slack_func.entity.fileUpload;
@@ -24,8 +25,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -131,4 +137,28 @@ public class SlackFileService {
         Optional<MonitoredUsers> user = slackUserRepo.findByUserId(userId);
         return user.map(MonitoredUsers::getUserName).orElse("unknown_user");
     }
+
+    public List<SlackRecentFileDTO> slackRecentFiles() {
+        List<fileUpload> recentFileUploads = fileUploadRepository.findTop10ByOrderByTimestampDesc();
+
+        return recentFileUploads.stream().map(upload -> {
+            Optional<storedFiles> storedFileOpt = storedFilesRepository.findByFileId(upload.getSaasFileId());
+            Optional<MonitoredUsers> userOpt = slackUserRepo.findById(upload.getId());
+
+            if (storedFileOpt.isPresent() && userOpt.isPresent()) {
+                storedFiles storedFile = storedFileOpt.get();
+                MonitoredUsers user = userOpt.get();
+                return SlackRecentFileDTO.builder()
+                        .fileId(storedFile.getFileId())
+                        .fileName(Paths.get(storedFile.getSavePath()).getFileName().toString())
+                        .uploadedBy(user.getUserName())
+                        .fileType(storedFile.getType())
+                        .uploadTimestamp(LocalDateTime.ofInstant(Instant.ofEpochSecond(upload.getTimestamp()), ZoneId.systemDefault()))
+                        .build();
+            }
+            return null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+
 }
