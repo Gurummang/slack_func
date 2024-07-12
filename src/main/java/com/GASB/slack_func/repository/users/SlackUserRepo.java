@@ -4,7 +4,9 @@ import com.GASB.slack_func.entity.MonitoredUsers;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long> , SlackUserIF{
-
+    Optional<MonitoredUsers> findByUserId(String userId);
 }
