@@ -1,14 +1,15 @@
 package com.GASB.slack_func.entity;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
 @Table(indexes = @Index(name = "idx_saas_file_id", columnList = "saasFileId", unique = true))
 public class fileUpload {
     @Id
@@ -17,5 +18,13 @@ public class fileUpload {
     private int orgSaaSId;
     private String saasFileId;
     private String hash;
-    private LocalDateTime timestamp;
+    private int timestamp;
+
+    @Builder
+    public fileUpload(int orgSaaSId, String saasFileId, String hash, int timestamp) {
+        this.orgSaaSId = orgSaaSId;
+        this.saasFileId = saasFileId;
+        this.hash = hash;
+        this.timestamp = timestamp;
+    }
 }
