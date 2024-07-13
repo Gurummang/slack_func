@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Entity
+@Table(name = "stored_file")
 public class storedFiles {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -67,47 +67,40 @@ public class SlackFileService {
     @Transactional
     public void fetchAndStoreFiles() {
         try {
-            log.info("Starting to fetch and store files.");
             List<File> fileList = fetchFileList();
             String workspaceName = slackSpaceInfoService.getCurrentSpaceName();
             for (File file : fileList) {
-                processFile(file, workspaceName);
+                byte[] fileData = downloadFile(file.getUrlPrivateDownload());
+                String hash = calculateHash(fileData);
+
+                // 채널 및 사용자 정보 가져오기
+                String channelId = file.getChannels().isEmpty() ? null : file.getChannels().get(0);
+                String userId = file.getUser();
+
+                String channelName = fetchChannelName(channelId);
+                String uploadedUserName = fetchUserName(userId);
+                MonitoredUsers user = slackUserRepo.findByUserId(userId).orElse(null);
+
+                String filePath = saveFileToLocal(fileData, workspaceName, channelName, uploadedUserName, file.getName());
+
+                storedFiles storedFile = slackFileMapper.toStoredFileEntity(file, hash, filePath);
+                fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, 1, hash);
+                Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded",user);
+
+                if (storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty()
+                        && fileUploadRepository.findBySaasFileId(fileUploadObject.getSaasFileId()).isEmpty()) {
+                    storedFilesRepository.save(storedFile);
+                    fileUploadRepository.save(fileUploadObject);
+                    activitiesRepository.save(activity);
+                }
             }
-            log.info("Finished fetching and storing files.");
         } catch (Exception e) {
             log.error("Error processing files", e);
-            throw new RuntimeException(e); // Ensure the transaction is rolled back
         }
     }
 
     protected List<File> fetchFileList() throws IOException, SlackApiException {
         return slackApiService.fetchFiles();
-    }
-
-    protected void processFile(File file, String workspaceName) throws IOException, NoSuchAlgorithmException {
-        byte[] fileData = downloadFile(file.getUrlPrivateDownload());
-        String hash = calculateHash(fileData);
-
-        // 채널 및 사용자 정보 가져오기
-        String channelId = file.getChannels().isEmpty() ? null : file.getChannels().get(0);
-        String userId = file.getUser();
-
-        String channelName = fetchChannelName(channelId);
-        String uploadedUserName = fetchUserName(userId);
-
-        String filePath = saveFileToLocal(fileData, workspaceName, channelName, uploadedUserName, file.getName());
-
-        storedFiles storedFile = slackFileMapper.toStoredFileEntity(file, hash, filePath);
-        fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, 1, hash);
-        Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded");
-
-        if (storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty()
-                && fileUploadRepository.findBySaasFileId(fileUploadObject.getSaasFileId()).isEmpty()) {
-            storedFilesRepository.save(storedFile);
-            fileUploadRepository.save(fileUploadObject);
-            activitiesRepository.save(activity);
-            log.info("Stored file: {}", file.getName());
-        }
     }
 
     protected byte[] downloadFile(String fileUrl) throws IOException {
@@ -159,7 +152,7 @@ public class SlackFileService {
             if (storedFileOpt.isPresent() && activityOpt.isPresent()) {
                 storedFiles storedFile = storedFileOpt.get();
                 Activities activity = activityOpt.get();
-                Optional<MonitoredUsers> userOpt = slackUserRepo.findByUserId(activity.getUserId());
+                Optional<MonitoredUsers> userOpt = slackUserRepo.findByUserId(activity.getUser().getUserId());
                 String uploadedBy = userOpt.map(MonitoredUsers::getUserName).orElse("Unknown User");
 
                 return SlackRecentFileDTO.builder()

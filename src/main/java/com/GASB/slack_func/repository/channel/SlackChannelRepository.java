@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface SlackChannelRepository extends JpaRepository<ChannelList, Long>{
     Optional<ChannelList> findByChannelId(String channelId);
+
+    boolean existsByChannelId(String channelId);
 }
