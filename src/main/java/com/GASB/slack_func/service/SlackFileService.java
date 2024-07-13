@@ -1,6 +1,5 @@
 package com.GASB.slack_func.service;
 
-
 import com.GASB.slack_func.dto.SlackRecentFileDTO;
 import com.GASB.slack_func.entity.*;
 import com.GASB.slack_func.mapper.SlackFileMapper;
@@ -42,6 +41,7 @@ public class SlackFileService {
     private final SlackUserRepo slackUserRepo;
     private final SlackSpaceInfoService slackSpaceInfoService;
     private final FileActivityRepo activitiesRepository;
+    private final RestTemplate restTemplate;
 
     public SlackFileService(SlackApiService slackApiService,
                             SlackFileRepository storedFilesRepository,
@@ -50,7 +50,8 @@ public class SlackFileService {
                             SlackChannelRepository slackChannelRepository,
                             SlackUserRepo slackUserRepo,
                             SlackSpaceInfoService slackSpaceInfoService,
-                            FileActivityRepo activitiesRepository) {
+                            FileActivityRepo activitiesRepository,
+                            RestTemplate restTemplate) {
         this.slackApiService = slackApiService;
         this.storedFilesRepository = storedFilesRepository;
         this.slackFileMapper = slackFileMapper;
@@ -59,6 +60,7 @@ public class SlackFileService {
         this.slackUserRepo = slackUserRepo;
         this.slackSpaceInfoService = slackSpaceInfoService;
         this.activitiesRepository = activitiesRepository;
+        this.restTemplate = restTemplate;
     }
 
     public void fetchAndStoreFiles() {
@@ -98,7 +100,6 @@ public class SlackFileService {
     }
 
     protected byte[] downloadFile(String fileUrl) throws IOException {
-        RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<byte[]> response = restTemplate.getForEntity(fileUrl, byte[].class);
         if (response.getStatusCode() == HttpStatus.OK) {
             return response.getBody();
