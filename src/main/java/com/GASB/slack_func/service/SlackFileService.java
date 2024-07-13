@@ -10,6 +10,7 @@ import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.model.File;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,40 +64,50 @@ public class SlackFileService {
         this.restTemplate = restTemplate;
     }
 
+    @Transactional
     public void fetchAndStoreFiles() {
         try {
+            log.info("Starting to fetch and store files.");
             List<File> fileList = fetchFileList();
             String workspaceName = slackSpaceInfoService.getCurrentSpaceName();
             for (File file : fileList) {
-                byte[] fileData = downloadFile(file.getUrlPrivateDownload());
-                String hash = calculateHash(fileData);
-
-                // 채널 및 사용자 정보 가져오기
-                String channelId = file.getChannels().isEmpty() ? null : file.getChannels().get(0);
-                String userId = file.getUser();
-
-                String channelName = fetchChannelName(channelId);
-                String uploadedUserName = fetchUserName(userId);
-
-                String filePath = saveFileToLocal(fileData, workspaceName, channelName, uploadedUserName, file.getName());
-
-                storedFiles storedFile = slackFileMapper.toStoredFileEntity(file, hash, filePath);
-                fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, 1, hash);
-                Activities activity = slackFileMapper.toActivityEntity(file,  "file_uploaded");
-
-                if (storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty()
-                        && fileUploadRepository.findBySaasFileId(fileUploadObject.getSaasFileId()).isEmpty()) {
-                    storedFilesRepository.save(storedFile);
-                    fileUploadRepository.save(fileUploadObject);
-                    activitiesRepository.save(activity);
-                }
+                processFile(file, workspaceName);
             }
+            log.info("Finished fetching and storing files.");
         } catch (Exception e) {
             log.error("Error processing files", e);
+            throw new RuntimeException(e); // Ensure the transaction is rolled back
         }
     }
+
     protected List<File> fetchFileList() throws IOException, SlackApiException {
         return slackApiService.fetchFiles();
+    }
+
+    protected void processFile(File file, String workspaceName) throws IOException, NoSuchAlgorithmException {
+        byte[] fileData = downloadFile(file.getUrlPrivateDownload());
+        String hash = calculateHash(fileData);
+
+        // 채널 및 사용자 정보 가져오기
+        String channelId = file.getChannels().isEmpty() ? null : file.getChannels().get(0);
+        String userId = file.getUser();
+
+        String channelName = fetchChannelName(channelId);
+        String uploadedUserName = fetchUserName(userId);
+
+        String filePath = saveFileToLocal(fileData, workspaceName, channelName, uploadedUserName, file.getName());
+
+        storedFiles storedFile = slackFileMapper.toStoredFileEntity(file, hash, filePath);
+        fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, 1, hash);
+        Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded");
+
+        if (storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty()
+                && fileUploadRepository.findBySaasFileId(fileUploadObject.getSaasFileId()).isEmpty()) {
+            storedFilesRepository.save(storedFile);
+            fileUploadRepository.save(fileUploadObject);
+            activitiesRepository.save(activity);
+            log.info("Stored file: {}", file.getName());
+        }
     }
 
     protected byte[] downloadFile(String fileUrl) throws IOException {
