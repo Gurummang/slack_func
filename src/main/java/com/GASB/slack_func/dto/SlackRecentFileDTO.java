@@ -12,4 +12,11 @@ public class SlackRecentFileDTO {
     private String uploadedBy;
     private String fileType;
     private LocalDateTime uploadTimestamp;
+
+    public SlackRecentFileDTO(String fileName, String uploadedBy, String fileType, LocalDateTime uploadTimestamp) {
+        this.fileName = fileName;
+        this.uploadedBy = uploadedBy;
+        this.fileType = fileType;
+        this.uploadTimestamp = uploadTimestamp;
+    }
 }
