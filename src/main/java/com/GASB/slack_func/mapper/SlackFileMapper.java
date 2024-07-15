@@ -1,9 +1,9 @@
 package com.GASB.slack_func.mapper;
 
-import com.GASB.slack_func.entity.Activities;
-import com.GASB.slack_func.entity.MonitoredUsers;
-import com.GASB.slack_func.entity.fileUpload;
-import com.GASB.slack_func.entity.storedFiles;
+import com.GASB.slack_func.model.entity.Activities;
+import com.GASB.slack_func.model.entity.MonitoredUsers;
+import com.GASB.slack_func.model.entity.fileUpload;
+import com.GASB.slack_func.model.entity.StoredFile;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.slack.api.model.File;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,19 +26,19 @@ public class SlackFileMapper {
         this.monitoredUsersRepository = slackUserRepo;
     }
 
-    public storedFiles toStoredFileEntity(File file, String hash, String filePath) {
+    public StoredFile toStoredFileEntity(File file, String hash, String filePath) {
         if (file == null) {
             return null;
         }
-        return storedFiles.builder()
-                .saltedHash(hash)
-                .size(file.getSize())
+        return StoredFile.builder()
                 .type(file.getFiletype())
+                .size(file.getSize())
                 .savePath(filePath)
+                .saltedHash(hash)
                 .build();
     }
 
-    public List<storedFiles> toStoredFileEntity(List<File> files, List<String> hashes, List<String> filePaths) {
+    public List<StoredFile> toStoredFileEntity(List<File> files, List<String> hashes, List<String> filePaths) {
         return IntStream.range(0, files.size())
                 .mapToObj(i -> toStoredFileEntity(files.get(i), hashes.get(i), filePaths.get(i)))
                 .collect(Collectors.toList());
