@@ -24,6 +24,12 @@ public class SlackEventController {
         this.slackFileEvent = slackFileEvent;
     }
 
+    @PostMapping("/")
+    public ResponseEntity<String> handleEvent(@RequestBody Map<String, Object> payload) {
+        // Log the received event payload
+        log.info("Received event payload: {}", payload);
+        return ResponseEntity.ok("Event received and logged");
+    }
     @PostMapping("/file-shared")
     public ResponseEntity<String> handleFileEvent(@RequestBody Map<String, Object> payload) {
         // Log the received event payload
