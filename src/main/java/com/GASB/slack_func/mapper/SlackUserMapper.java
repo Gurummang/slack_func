@@ -1,7 +1,7 @@
 package com.GASB.slack_func.mapper;
 
-import com.GASB.slack_func.entity.MonitoredUsers;
-import com.GASB.slack_func.entity.OrgSaaS;
+import com.GASB.slack_func.model.entity.MonitoredUsers;
+import com.GASB.slack_func.model.entity.OrgSaaS;
 import com.GASB.slack_func.repository.orgSaaS.OrgSaaSRepo;
 import com.slack.api.model.User;
 import org.springframework.stereotype.Component;

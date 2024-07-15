@@ -1,6 +1,6 @@
 package com.GASB.slack_func.service;
 
-import com.GASB.slack_func.entity.ChannelList;
+import com.GASB.slack_func.model.entity.ChannelList;
 import com.GASB.slack_func.mapper.SlackChannelMapper;
 import com.GASB.slack_func.repository.channel.SlackChannelRepository;
 import com.slack.api.methods.SlackApiException;

@@ -1,6 +1,6 @@
 package com.GASB.slack_func.repository.files;
 
-import com.GASB.slack_func.entity.fileUpload;
+import com.GASB.slack_func.model.entity.fileUpload;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

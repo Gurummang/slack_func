@@ -1,7 +1,7 @@
 package com.GASB.slack_func.controller;
 
 import com.GASB.slack_func.service.SlackChannelService;
-import com.GASB.slack_func.service.SlackFileService;
+import com.GASB.slack_func.service.file.SlackFileService;
 import com.GASB.slack_func.service.SlackSpaceInfoService;
 import com.GASB.slack_func.service.SlackUserService;
 import org.springframework.beans.factory.annotation.Autowired;

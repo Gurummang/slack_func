@@ -1,4 +1,4 @@
-package com.GASB.slack_func.entity;
+package com.GASB.slack_func.model.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "saas")
-public class Saas {
+@Table(name = "org")
+public class Org {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "saas_name", nullable = false, length = 100)
-    private String saasName;
+    @Column(name = "org_name", nullable = false, length = 100)
+    private String orgName;
 }

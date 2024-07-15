@@ -1,7 +1,8 @@
 package com.GASB.slack_func.controller;
 
-import com.GASB.slack_func.dto.SlackRecentFileDTO;
-import com.GASB.slack_func.service.SlackFileService;
+import com.GASB.slack_func.model.dto.SlackRecentFileDTO;
+import com.GASB.slack_func.model.dto.SlackTotalFileDataDto;
+import com.GASB.slack_func.service.file.SlackFileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,5 +38,36 @@ public class SlackFileController {
                     .body(Collections.singletonList(new SlackRecentFileDTO("Error", "Server Error", "N/A", LocalDateTime.now())));
         }
     }
+
+    @PostMapping("/total")
+    public ResponseEntity<SlackTotalFileDataDto> fetchTotalFilesData() {
+        try {
+            SlackTotalFileDataDto totalFilesData = slackFileService.slackTotalFilesData();
+            if (totalFilesData.getFiles().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(SlackTotalFileDataDto.builder()
+                        .ok(false)
+                        .files(Collections.singletonList(SlackTotalFileDataDto.FileDetail.builder()
+                                .fileName("No Data")
+                                .username("No Data")
+                                .fileType("N/A")
+                                .timestamp(LocalDateTime.now())
+                                .build()))
+                        .build());
+            }
+            return ResponseEntity.ok(totalFilesData);
+        } catch (Exception e) {
+            logger.error("Error fetching total files data", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(SlackTotalFileDataDto.builder()
+                    .ok(false)
+                    .files(Collections.singletonList(SlackTotalFileDataDto.FileDetail.builder()
+                            .fileName("Error")
+                            .username("Server Error")
+                            .fileType("N/A")
+                            .timestamp(LocalDateTime.now())
+                            .build()))
+                    .build());
+        }
+    }
+
 }
 

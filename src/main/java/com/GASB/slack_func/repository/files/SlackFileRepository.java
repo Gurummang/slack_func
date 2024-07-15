@@ -1,13 +1,13 @@
 package com.GASB.slack_func.repository.files;
 
-import com.GASB.slack_func.entity.storedFiles;
+import com.GASB.slack_func.model.entity.StoredFile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface SlackFileRepository extends JpaRepository<storedFiles, Long> {
+public interface SlackFileRepository extends JpaRepository<StoredFile, Long> {
 //    Optional<storedFiles> findByFileId(String fileId);
-    Optional<storedFiles> findBySaltedHash(String saltedHash);
+    Optional<StoredFile> findBySaltedHash(String saltedHash);
 }

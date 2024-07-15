@@ -1,6 +1,6 @@
 package com.GASB.slack_func.service;
 
-import com.GASB.slack_func.entity.MonitoredUsers;
+import com.GASB.slack_func.model.entity.MonitoredUsers;
 import com.GASB.slack_func.mapper.SlackUserMapper;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.slack.api.model.User;

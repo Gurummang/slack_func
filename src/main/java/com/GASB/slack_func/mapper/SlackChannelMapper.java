@@ -1,7 +1,7 @@
 package com.GASB.slack_func.mapper;
 
-import com.GASB.slack_func.dto.SlackChannelDto;
-import com.GASB.slack_func.entity.ChannelList;
+import com.GASB.slack_func.model.dto.SlackChannelDto;
+import com.GASB.slack_func.model.entity.ChannelList;
 import com.slack.api.model.Conversation;
 import org.springframework.stereotype.Component;
 

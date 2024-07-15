@@ -1,4 +1,4 @@
-package com.GASB.slack_func.entity;
+package com.GASB.slack_func.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

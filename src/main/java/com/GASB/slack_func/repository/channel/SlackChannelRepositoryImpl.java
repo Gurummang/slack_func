@@ -1,7 +1,7 @@
 package com.GASB.slack_func.repository.channel;
 
-import com.GASB.slack_func.dto.SlackChannelDto;
-import com.GASB.slack_func.entity.ChannelList;
+import com.GASB.slack_func.model.dto.SlackChannelDto;
+import com.GASB.slack_func.model.entity.ChannelList;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
