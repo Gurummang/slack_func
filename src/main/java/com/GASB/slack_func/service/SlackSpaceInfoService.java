@@ -1,6 +1,6 @@
 package com.GASB.slack_func.service;
 
-import com.GASB.slack_func.entity.SpaceList;
+import com.GASB.slack_func.model.entity.SpaceList;
 import com.GASB.slack_func.mapper.SpaceMapper;
 import com.GASB.slack_func.repository.space.SpaceRepository;
 import com.slack.api.methods.SlackApiException;

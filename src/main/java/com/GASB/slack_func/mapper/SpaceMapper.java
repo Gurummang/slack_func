@@ -1,6 +1,6 @@
 package com.GASB.slack_func.mapper;
 
-import com.GASB.slack_func.entity.SpaceList;
+import com.GASB.slack_func.model.entity.SpaceList;
 import com.slack.api.model.Team;
 import org.springframework.stereotype.Component;
 

@@ -1,4 +1,4 @@
-package com.GASB.slack_func.entity;
+package com.GASB.slack_func.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Entity
-public class storedFiles {
+@Table(name = "stored_file")
+public class StoredFile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -25,7 +26,7 @@ public class storedFiles {
     private String savePath;
 
     @Builder
-    public storedFiles(long id, String fileId, String saltedHash, int size, String type, String savePath){
+    public StoredFile(long id, String fileId, String saltedHash, int size, String type, String savePath){
         this.id = id;
 //        this.fileId = fileId;
         this.saltedHash = saltedHash;

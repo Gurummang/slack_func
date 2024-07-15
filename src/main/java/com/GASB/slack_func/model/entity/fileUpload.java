@@ -1,4 +1,4 @@
-package com.GASB.slack_func.entity;
+package com.GASB.slack_func.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(indexes = @Index(name = "idx_saas_file_id", columnList = "saasFileId", unique = true))
+@Table(indexes = @Index(name = "idx_saas_file_id", columnList = "saasFileId", unique = true), name = "file_upload")
 public class fileUpload {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

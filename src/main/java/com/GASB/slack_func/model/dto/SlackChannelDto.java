@@ -1,4 +1,4 @@
-package com.GASB.slack_func.dto;
+package com.GASB.slack_func.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

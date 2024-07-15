@@ -1,7 +1,6 @@
 package com.GASB.slack_func.repository.users;
 
-import com.GASB.slack_func.dto.SlackUserDto;
-import com.GASB.slack_func.entity.MonitoredUsers;
+import com.GASB.slack_func.model.entity.MonitoredUsers;
 
 import java.util.List;
 
