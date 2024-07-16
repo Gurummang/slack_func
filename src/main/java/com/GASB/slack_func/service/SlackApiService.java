@@ -75,4 +75,24 @@ public class SlackApiService {
             throw new RuntimeException("Error fetching file info: " + filesInfoResponse.getError());
         }
     }
+
+    // conversations.info API호출 메서드
+    public Conversation fetchConversationInfo(String channelId) throws IOException, SlackApiException {
+        com.slack.api.methods.response.conversations.ConversationsInfoResponse conversationsInfoResponse = slack.methods(token).conversationsInfo(r -> r.channel(channelId));
+        if (conversationsInfoResponse.isOk()) {
+            return conversationsInfoResponse.getChannel();
+        } else {
+            throw new RuntimeException("Error fetching conversation info: " + conversationsInfoResponse.getError());
+        }
+    }
+
+    // users.info API호출 메서드
+    public User fetchUserInfo(String userId) throws IOException, SlackApiException {
+        com.slack.api.methods.response.users.UsersInfoResponse usersInfoResponse = slack.methods(token).usersInfo(r -> r.user(userId));
+        if (usersInfoResponse.isOk()) {
+            return usersInfoResponse.getUser();
+        } else {
+            throw new RuntimeException("Error fetching user info: " + usersInfoResponse.getError());
+        }
+    }
 }
