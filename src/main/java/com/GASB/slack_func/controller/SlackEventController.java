@@ -43,8 +43,16 @@ public class SlackEventController {
     public ResponseEntity<String> handleMessageEvent(@RequestBody Map<String, Object> payload) {
         // Log the received event payload
         log.info("Received event payload: {}", payload);
-        slackChannelEvent.handleChannelEvent();
+        slackChannelEvent.handleChannelEvent(payload);
         return ResponseEntity.ok("Event received and logged");
+    }
+
+    @PostMapping("/user-joined")
+    public ResponseEntity<String> handleUserEvent(@RequestBody Map<String, Object> payload) {
+        // Log the received event payload
+        log.info("Received event payload: {}", payload);
+        slackUserEvent.handleUserEvent(payload);
+        return ResponseEntity.ok("User Event received and logged");
     }
 
 }
