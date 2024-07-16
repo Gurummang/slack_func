@@ -12,7 +12,6 @@ import com.slack.api.model.Team;
 import com.slack.api.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,12 +21,10 @@ public class SlackApiService {
 
     private final String token;
     private final Slack slack;
-    private final RestTemplate restTemplate;
 
-    public SlackApiService(@Value("${slack.token}") String token, RestTemplate restTemplate) {
+    public SlackApiService(@Value("${slack.token}") String token) {
         this.token = token;
         this.slack = Slack.getInstance();
-        this.restTemplate = restTemplate;
     }
 
     // ConversationsList API호출 메서드
