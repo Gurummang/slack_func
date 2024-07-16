@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -156,5 +157,23 @@ public class SlackFileService {
         totalFileDataDto.setFiles(fileDetails);
 
         return totalFileDataDto;
+    }
+
+    public List<Map.Entry<String, Long>> getTop5UploadUsers() {
+        // Activities 테이블에서 사용자별 업로드된 파일 수 집계
+        Map<String, Long> userUploadCounts = activitiesRepository.findAll().stream()
+                .filter(activity -> "file_uploaded".equals(activity.getEventType()))
+                .collect(Collectors.groupingBy(activity -> activity.getUser().getUserId(), Collectors.counting()));
+
+        // 상위 5명 추출 및 사용자 이름으로 변환
+        return userUploadCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(5)
+                .map(entry -> {
+                    Optional<MonitoredUsers> user = slackUserRepo.findByUserId(entry.getKey());
+                    String userName = user.map(MonitoredUsers::getUserName).orElse("Unknown User");
+                    return Map.entry(userName, entry.getValue());
+                })
+                .collect(Collectors.toList());
     }
 }
