@@ -68,4 +68,14 @@ public class SlackApiService {
             throw new RuntimeException("Error fetching users: " + teamInfoResponse.getError());
         }
     }
+
+    // files.info API호출 메서드
+    public File fetchFileInfo(String fileId) throws IOException, SlackApiException {
+        com.slack.api.methods.response.files.FilesInfoResponse filesInfoResponse = slack.methods(token).filesInfo(r -> r.file(fileId));
+        if (filesInfoResponse.isOk()) {
+            return filesInfoResponse.getFile();
+        } else {
+            throw new RuntimeException("Error fetching file info: " + filesInfoResponse.getError());
+        }
+    }
 }
