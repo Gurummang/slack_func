@@ -12,7 +12,6 @@ import com.slack.api.model.Team;
 import com.slack.api.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,12 +21,10 @@ public class SlackApiService {
 
     private final String token;
     private final Slack slack;
-    private final RestTemplate restTemplate;
 
-    public SlackApiService(@Value("${slack.token}") String token, RestTemplate restTemplate) {
+    public SlackApiService(@Value("${slack.token}") String token) {
         this.token = token;
         this.slack = Slack.getInstance();
-        this.restTemplate = restTemplate;
     }
 
     // ConversationsList API호출 메서드
@@ -66,6 +63,36 @@ public class SlackApiService {
             return teamInfoResponse.getTeam();
         } else {
             throw new RuntimeException("Error fetching users: " + teamInfoResponse.getError());
+        }
+    }
+
+    // files.info API호출 메서드
+    public File fetchFileInfo(String fileId) throws IOException, SlackApiException {
+        com.slack.api.methods.response.files.FilesInfoResponse filesInfoResponse = slack.methods(token).filesInfo(r -> r.file(fileId));
+        if (filesInfoResponse.isOk()) {
+            return filesInfoResponse.getFile();
+        } else {
+            throw new RuntimeException("Error fetching file info: " + filesInfoResponse.getError());
+        }
+    }
+
+    // conversations.info API호출 메서드
+    public Conversation fetchConversationInfo(String channelId) throws IOException, SlackApiException {
+        com.slack.api.methods.response.conversations.ConversationsInfoResponse conversationsInfoResponse = slack.methods(token).conversationsInfo(r -> r.channel(channelId));
+        if (conversationsInfoResponse.isOk()) {
+            return conversationsInfoResponse.getChannel();
+        } else {
+            throw new RuntimeException("Error fetching conversation info: " + conversationsInfoResponse.getError());
+        }
+    }
+
+    // users.info API호출 메서드
+    public User fetchUserInfo(String userId) throws IOException, SlackApiException {
+        com.slack.api.methods.response.users.UsersInfoResponse usersInfoResponse = slack.methods(token).usersInfo(r -> r.user(userId));
+        if (usersInfoResponse.isOk()) {
+            return usersInfoResponse.getUser();
+        } else {
+            throw new RuntimeException("Error fetching user info: " + usersInfoResponse.getError());
         }
     }
 }

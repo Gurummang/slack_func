@@ -42,4 +42,12 @@ public class SlackUserService {
             log.error("Error fetching users", e);
         }
     }
+
+
+    public void addUser(User user) {
+        MonitoredUsers monitoredUser = slackUserMapper.toEntity(user,1);
+        if (!slackUserRepo.existsByUserId(monitoredUser.getUserId())) {
+            slackUserRepo.save(monitoredUser);
+        }
+    }
 }
