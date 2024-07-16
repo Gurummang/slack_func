@@ -42,6 +42,10 @@ dependencies {
 	//json
 	implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
 
+	//aws
+	implementation platform('software.amazon.awssdk:bom:2.21.1')
+	implementation 'software.amazon.awssdk:s3'
+
 
 }
 
