@@ -98,9 +98,9 @@ public class SlackInfoController {
     public ResponseEntity<Map<String, String>> fetchAndSaveAll() {
         Map<String, String> response = new HashMap<>();
         try {
+            slackSpaceInfoService.slackSpaceRegister();
             slackChannelService.slackFirstChannels();
             slackUserService.slackFirstUsers();
-            slackSpaceInfoService.slackSpaceRegister();
             slackFileService.fetchAndStoreFiles();
             response.put("status", "success");
             response.put("message", "All data saved successfully");
