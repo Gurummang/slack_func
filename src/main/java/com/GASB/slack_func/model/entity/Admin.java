@@ -17,6 +17,7 @@ public class Admin {
     private Long id;
 
     @ManyToOne
+    @JoinColumn(name = "org_id", nullable = false)
     private Org org;
 
     @Column(nullable = false, unique = true)

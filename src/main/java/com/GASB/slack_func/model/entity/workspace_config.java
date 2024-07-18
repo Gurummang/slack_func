@@ -7,14 +7,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "saas_config")
-public class SaasConfig {
+@Table(name = "workspace_config")
+public class workspace_config {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,12 +23,15 @@ public class SaasConfig {
     @Column(name = "saas_admin_email", nullable = false, length = 100)
     private String saasAdminEmail;
 
-    @Column(name = "nickname", nullable = false, length = 100)
-    private String nickname;
+    @Column(name = "saasname", nullable = false, length = 100)
+    private String saasname;
 
     @Column(name = "register_date", nullable = false)
     private LocalDateTime registerDate;
 
-    @Column(name = "saas_alias", nullable = false, length = 100)
-    private String saasAlias;
+    @Column(name = "token", nullable = false, length = 100)
+    private String token;
+
+    @OneToMany(mappedBy = "workspace_config", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrgSaaS> orgSaaSList;
 }

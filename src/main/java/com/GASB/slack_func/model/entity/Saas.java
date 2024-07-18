@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Getter
 @NoArgsConstructor
@@ -19,4 +21,8 @@ public class Saas {
 
     @Column(name = "saas_name", nullable = false, length = 100)
     private String saasName;
+
+    @OneToMany(mappedBy = "saas", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrgSaaS> orgSaaSList;
+
 }

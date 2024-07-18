@@ -22,10 +22,10 @@ public class MonitoredUsers {
     @JoinColumn(name = "org_saas_id", nullable = false)
     private OrgSaaS orgSaaS;
 
-    @Column(name = "email", nullable = true, length = 100)
+    @Column(name = "email", length = 100)
     private String email;
 
-    @Column(name = "user_name", nullable = true, length = 100)
+    @Column(name = "user_name", length = 100)
     private String userName;
 
     @Column(name = "status")
