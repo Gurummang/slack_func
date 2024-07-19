@@ -4,8 +4,9 @@ import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
 import com.GASB.slack_func.model.entity.OrgSaaS;
+import com.GASB.slack_func.model.entity.Saas;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
-import com.GASB.slack_func.service.SlackApiService;
+import com.GASB.slack_func.repository.org.SaasRepo;
 import com.GASB.slack_func.service.file.SlackFileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,14 +25,14 @@ import java.util.List;
 @Slf4j
 @RequestMapping("/api/v1/board/slack")
 public class SlackBoardController {
-    private final SlackApiService slackApiService;
     private final SlackFileService slackFileService;
     private final OrgSaaSRepo  orgSaaSRepo;
+    private final SaasRepo saasRepo;
 
     @PostMapping("/files/size")
     public ResponseEntity<SlackFileSizeDto> fetchFileSize(){
         try{
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSaaSId(1,1).orElse(null);
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSaas(1,saasRepo.findById(1).orElse(null)).orElse(null);
             SlackFileSizeDto slackFileSizeDto = slackFileService.slackFileSize(orgSaaSObject);
             return ResponseEntity.ok(slackFileSizeDto);
         } catch (Exception e) {
@@ -45,7 +46,8 @@ public class SlackBoardController {
     public ResponseEntity<SlackFileCountDto> fetchFileCount(){
 
         try{
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSaaSId(1,1).orElse(null);
+            Saas saasObject = saasRepo.findById(1).orElse(null);
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSaas(1,saasObject).orElse(null);
             SlackFileCountDto slackFileCountDto = slackFileService.slackFileCount(orgSaaSObject);
             return ResponseEntity.ok(slackFileCountDto);
         } catch (Exception e) {

@@ -2,6 +2,9 @@ package com.GASB.slack_func.service.file;
 
 import com.GASB.slack_func.mapper.SlackFileMapper;
 import com.GASB.slack_func.model.entity.*;
+import com.GASB.slack_func.repository.AV.DlpRepo;
+import com.GASB.slack_func.repository.AV.FileStatusRepository;
+import com.GASB.slack_func.repository.AV.VtReportRepository;
 import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.channel.SlackChannelRepository;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
@@ -26,7 +29,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -41,6 +46,9 @@ public class FileUtil {
     private final SlackChannelRepository slackChannelRepository;
     private final SlackFileMapper slackFileMapper;
     private final RestTemplate restTemplate;
+    private final DlpRepo dlpRepo;
+    private final VtReportRepository vtReportRepository;
+    private final FileStatusRepository fileStatusRepository;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -198,5 +206,93 @@ public class FileUtil {
     public String TokenSelector(OrgSaaS orgSaaSObject) {
         String used_token = orgSaaSObject.getConfig().getToken();
         return used_token;
+    }
+
+    protected int calculateTotalFileSize(List<fileUpload> targetFileList) {
+        return targetFileList.stream()
+                .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .mapToInt(storedFile -> Optional.of(storedFile.getSize())
+                        .orElse(0))
+                .sum();
+    }
+
+    public int CalcSlackSensitiveSize(List<fileUpload> TargetFileList){
+        return getSensitiveFileList(TargetFileList).stream()
+                .mapToInt(StoredFile::getSize).sum();
+    }
+
+    public int CalcSlackMaliciousSize(List<fileUpload> TargetFileList){
+        return getMaliciousFileList(TargetFileList).stream()
+                .mapToInt(StoredFile::getSize).sum();
+    }
+
+    public List<StoredFile> getMaliciousFileList(List<fileUpload> targetFileList) {
+        return targetFileList.stream()
+                .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(storedFile -> {
+                    FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
+                    if (fileStatus != null && fileStatus.getGscanStatus() == 1) {
+                        return vtReportRepository.findByStoredFile(storedFile)
+                                .map(vtReport -> vtReport.getThreatLabel() != null)
+                                .orElse(false);
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+    }
+    private List<StoredFile> getSensitiveFileList(List<fileUpload> targetFileList) {
+        return targetFileList.stream()
+                .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(storedFile -> {
+                    FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
+                    if (fileStatus != null && fileStatus.getDlpStatus() == 1) {
+                        DlpReport dlpReport = dlpRepo.findByStoredFile(storedFile).orElse(null);
+                        return dlpReport != null && dlpReport.getDlp();
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+    }
+
+
+
+    public int countSensitiveFiles(List<fileUpload> targetFileList) {
+        return (int) targetFileList.stream()
+                .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(storedFile -> {
+                    FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
+                    return fileStatus != null && fileStatus.getDlpStatus() == 1 &&
+                            dlpRepo.findByStoredFile(storedFile)
+                                    .map(DlpReport::getDlp)
+                                    .orElse(false);
+                })
+                .count();
+    }
+
+    public int countMaliciousFiles(List<fileUpload> targetFileList) {
+        return (int) targetFileList.stream()
+                .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(storedFile -> {
+                    FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
+                    return fileStatus != null && fileStatus.getGscanStatus() == 1 &&
+                            vtReportRepository.findByStoredFile(storedFile)
+                                    .map(vtReport -> vtReport.getThreatLabel() != null)
+                                    .orElse(false);
+                })
+                .count();
+    }
+
+    public int countConnectedAccounts(OrgSaaS orgSaaSObject) {
+        return slackUserRepo.findByOrgSaaS(orgSaaSObject).size();
     }
 }

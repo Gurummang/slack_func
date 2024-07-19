@@ -13,7 +13,7 @@ public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long> , Sla
     Optional<MonitoredUsers> findByUserId(String userId);
     String findUserNameByUserId(String userId);
 
-    List<MonitoredUsers> findByOrgSaaSId(OrgSaaS orgSaaS);
+    List<MonitoredUsers> findByOrgSaaS(OrgSaaS orgSaaS);
 
     boolean existsByUserId(String userId);
 }

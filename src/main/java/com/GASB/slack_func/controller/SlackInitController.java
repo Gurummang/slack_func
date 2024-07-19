@@ -8,10 +8,7 @@ import com.GASB.slack_func.service.file.SlackFileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +24,11 @@ public class SlackInitController {
     private final SlackFileService slackFileService;
     private final ExtractSpaceId extractSpaceId;
 
+
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("hello world!");
+    }
     //원래 여기서 AOP던 뭐던 인증을 통해서 요청한 클라리언트의 값을 받아옴
     @PostMapping("/channels")
     public ResponseEntity<Map<String, String>> fetchAndSaveChannels(@RequestBody ExtractSpaceId request) {

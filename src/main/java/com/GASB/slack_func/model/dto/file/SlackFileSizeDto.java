@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SlackFileSizeDto {
-    private int totalSize;
-    private int sensitiveSize;
-    private int maliciousSize;
+    private float totalSize;
+    private float sensitiveSize;
+    private float maliciousSize;
 }
