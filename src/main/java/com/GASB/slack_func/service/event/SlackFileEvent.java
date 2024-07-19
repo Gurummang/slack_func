@@ -36,9 +36,4 @@ public class SlackFileEvent {
             log.error("Unexpected error processing file event", e);
         }
     }
-//
-//    private File mapDtoToFile(Map<String, Object> payload) throws SlackApiException, IOException {
-//        SlackFileSharedEventDto dto = mapper.convertValue(payload, SlackFileSharedEventDto.class);
-//        return slackApiService.fetchFileInfo(dto.getFileId());
-//    }
 }
