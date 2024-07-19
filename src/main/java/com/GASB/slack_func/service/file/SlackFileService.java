@@ -1,7 +1,7 @@
 package com.GASB.slack_func.service.file;
 
-import com.GASB.slack_func.model.dto.SlackRecentFileDTO;
-import com.GASB.slack_func.model.dto.SlackTotalFileDataDto;
+import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
+import com.GASB.slack_func.model.dto.file.SlackTotalFileDataDto;
 import com.GASB.slack_func.model.entity.*;
 import com.GASB.slack_func.repository.AV.FileStatusRepository;
 import com.GASB.slack_func.repository.AV.VtReportRepository;
