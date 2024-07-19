@@ -23,4 +23,6 @@ public class Gscan {
     private StoredFile storedFile;
 
     private String step2Detail;
+
+    private boolean detected;
 }

@@ -3,6 +3,8 @@ package com.GASB.slack_func.controller;
 import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
+import com.GASB.slack_func.model.entity.OrgSaaS;
+import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.service.SlackApiService;
 import com.GASB.slack_func.service.file.SlackFileService;
 import lombok.RequiredArgsConstructor;
@@ -24,29 +26,32 @@ import java.util.List;
 public class SlackBoardController {
     private final SlackApiService slackApiService;
     private final SlackFileService slackFileService;
-
+    private final OrgSaaSRepo  orgSaaSRepo;
 
     @PostMapping("/files/size")
     public ResponseEntity<SlackFileSizeDto> fetchFileSize(){
         try{
-            SlackFileSizeDto slackFileSizeDto = slackFileService.slackFileSize();
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSaaSId(1,1).orElse(null);
+            SlackFileSizeDto slackFileSizeDto = slackFileService.slackFileSize(orgSaaSObject);
             return ResponseEntity.ok(slackFileSizeDto);
         } catch (Exception e) {
             log.error("Error fetching file size", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new SlackFileSizeDto("Error", "Server Error", "N/A", LocalDateTime.now()));
+                    .body(new SlackFileSizeDto(0,0,0));
         }
     }
 
     @PostMapping("/files/count")
     public ResponseEntity<SlackFileCountDto> fetchFileCount(){
+
         try{
-            SlackFileCountDto slackFileCountDto = slackFileService.slackFileCount();
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSaaSId(1,1).orElse(null);
+            SlackFileCountDto slackFileCountDto = slackFileService.slackFileCount(orgSaaSObject);
             return ResponseEntity.ok(slackFileCountDto);
         } catch (Exception e) {
             log.error("Error fetching file count", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new SlackFileCountDto("Error", "Server Error", "N/A", LocalDateTime.now()));
+                    .body(new SlackFileCountDto(0,0,0,0));
         }
     }
 

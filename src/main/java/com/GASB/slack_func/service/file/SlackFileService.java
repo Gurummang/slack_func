@@ -1,8 +1,11 @@
 package com.GASB.slack_func.service.file;
 
+import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
+import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
 import com.GASB.slack_func.model.dto.file.SlackTotalFileDataDto;
 import com.GASB.slack_func.model.entity.*;
+import com.GASB.slack_func.repository.AV.DlpRepo;
 import com.GASB.slack_func.repository.AV.FileStatusRepository;
 import com.GASB.slack_func.repository.AV.VtReportRepository;
 import com.GASB.slack_func.repository.activity.FileActivityRepo;
@@ -11,7 +14,6 @@ import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.GASB.slack_func.service.SlackApiService;
-import com.GASB.slack_func.service.SlackSpaceInfoService;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
@@ -23,6 +25,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,11 +38,7 @@ public class SlackFileService {
 
 
     private final SlackApiService slackApiService;
-
-    private final SlackSpaceInfoService slackSpaceInfoService;
-
     private final FileUtil fileUtil;
-
     private final FileUploadRepository fileUploadRepository;
     private final SlackFileRepository storedFilesRepository;
     private final FileActivityRepo activitiesRepository;
@@ -47,6 +46,7 @@ public class SlackFileService {
     private final OrgSaaSRepo orgSaaSRepo;
     private final FileStatusRepository fileStatusRepository;
     private final VtReportRepository vtReportRepository;
+    private final DlpRepo dlpRepo;
     @Transactional
     public void fetchAndStoreFiles(String spaceId) {
         try {
@@ -118,7 +118,7 @@ public class SlackFileService {
                         .filePath(Objects.requireNonNull(activity).getUploadChannel());
 //                        .filePath(storedFile.getSavePath());
 
-                VtReport vtReport = vtReportRepository.findByStoredFile(storedFile);
+                VtReport vtReport = vtReportRepository.findByStoredFile(storedFile).orElse(null);
                 if (vtReport != null) {
                     SlackTotalFileDataDto.FileDetail.VtScanResult vtScanResult = SlackTotalFileDataDto.FileDetail.VtScanResult.builder()
                             .threatLabel(vtReport.getThreatLabel())
@@ -158,5 +158,126 @@ public class SlackFileService {
         totalFileDataDto.setFiles(fileDetails);
 
         return totalFileDataDto;
+    }
+
+
+    // 전달값으로 어떤 조직인지, 어떤 SaaS인지 구분 필요, 근데 지금 api 엔드포인트 자체가 SaaS를 내포해서 일단은 Org
+    public SlackFileSizeDto slackFileSize(OrgSaaS orgSaaSObject) {
+        List<fileUpload> TargetFileList = fileUploadRepository.findByOrgSaaS(orgSaaSObject);
+
+        return SlackFileSizeDto.builder()
+                .totalSize(CalcSlackTotalFileSize(TargetFileList))
+                .sensitiveSize(CalcSlackSensitiveSize(TargetFileList))
+                .maliciousSize(CalcSlackMaliciousSize(TargetFileList))
+                .build();
+    }
+
+    public int CalcSlackTotalFileSize(List<fileUpload> TargetFileList){
+        int totalsize = 0;
+
+        for (fileUpload file : TargetFileList){
+            StoredFile storedFile = storedFilesRepository.findBySaltedHash(file.getHash()).orElse(null);
+            totalsize += Objects.requireNonNull(storedFile).getSize();
+        }
+        return totalsize;
+    }
+
+    public int CalcSlackSensitiveSize(List<fileUpload> TargetFileList){
+        int ssize = 0;
+
+        List<StoredFile> TargetList = getSensitiveFileList(TargetFileList);
+        for(StoredFile file : TargetList){
+            ssize += file.getSize();
+        }
+        return ssize;
+    }
+
+    public int CalcSlackMaliciousSize(List<fileUpload> TargetFileList){
+        int msize = 0;
+        List<StoredFile> TargetList = getMaliciousFileList(TargetFileList);
+        for(StoredFile file : TargetList){
+            msize += file.getSize();
+        }
+        return msize;
+    }
+    public SlackFileCountDto slackFileCount(OrgSaaS orgSaaSObject) {
+        List<fileUpload> TargetFileList = fileUploadRepository.findByOrgSaaS(orgSaaSObject);
+        int totalFileCount = TargetFileList.size();
+
+        return SlackFileCountDto.builder()
+                .totalFiles(totalFileCount)
+                .sensitiveFiles(CountSensitiveFiles(TargetFileList))
+                .maliciousFiles(CountMaliciousFiles(TargetFileList))
+                .connectedAccounts(CountConnectedAccounts(orgSaaSObject))
+                .build();
+    }
+
+    public int CountSensitiveFiles(List<fileUpload> TargetFileList) {
+        int sensitiveFiles = 0;
+        for (fileUpload file : TargetFileList) {
+            StoredFile storedFile = storedFilesRepository.findBySaltedHash(file.getHash()).orElse(null);
+            if (storedFile != null) {
+                FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
+                if (fileStatus != null && fileStatus.getDlpStatus() == 1) {
+                    if(Objects.requireNonNull(dlpRepo.findByStoredFile(storedFile).orElse(null)).getDlp())
+                        sensitiveFiles++;
+                }
+            }
+        }
+        return sensitiveFiles;
+    }
+
+    public int CountMaliciousFiles(List<fileUpload> TargetFileList) {
+        int maliciousFiles = 0;
+        for (fileUpload file : TargetFileList) {
+            StoredFile storedFile = storedFilesRepository.findBySaltedHash(file.getHash()).orElse(null);
+            if (storedFile != null) {
+                FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
+                if (fileStatus != null && fileStatus.getGscanStatus() == 1) {
+                    if(Objects.requireNonNull(vtReportRepository.findByStoredFile(storedFile).orElse(null)).getThreatLabel() != null)
+                        maliciousFiles++;
+                }
+            }
+        }
+        return maliciousFiles;
+    }
+
+    public List<StoredFile> getMaliciousFileList(List<fileUpload> targetFileList) {
+        List<StoredFile> maliciousList = new ArrayList<>();
+
+        for (fileUpload file : targetFileList) {
+            StoredFile storedFile = storedFilesRepository.findBySaltedHash(file.getHash()).orElse(null);
+            if (storedFile != null) {
+                FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
+                if (fileStatus != null && fileStatus.getGscanStatus() == 1) {
+                    VtReport vtReport = vtReportRepository.findByStoredFile(storedFile).orElse(null);
+                    if (vtReport != null && vtReport.getThreatLabel() != null) {
+                        maliciousList.add(storedFile);
+                    }
+                }
+            }
+        }
+        return maliciousList;
+    }
+
+    public List<StoredFile> getSensitiveFileList(List<fileUpload> targetFileList){
+        List<StoredFile> sensitiveList = new ArrayList<>();
+
+        for (fileUpload file : targetFileList) {
+            StoredFile storedFile = storedFilesRepository.findBySaltedHash(file.getHash()).orElse(null);
+            if (storedFile != null) {
+                FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
+                if (fileStatus != null && fileStatus.getDlpStatus() == 1) {
+                    if(Objects.requireNonNull(dlpRepo.findByStoredFile(storedFile).orElse(null)).getDlp())
+                        sensitiveList.add(storedFile);
+                }
+            }
+        }
+        return sensitiveList;
+    }
+
+    public int CountConnectedAccounts(OrgSaaS orgSaaSObject) {
+        List<MonitoredUsers> connectedAccounts = slackUserRepo.findByOrgSaaSId(orgSaaSObject);
+        return connectedAccounts.size();
     }
 }
