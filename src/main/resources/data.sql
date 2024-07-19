@@ -6,13 +6,13 @@ INSERT INTO org (id, org_name) VALUES (2, 'GA02');
 INSERT INTO saas (id, saas_name) VALUES (1, 'slack');
 INSERT INTO saas (id, saas_name) VALUES (2, 'jira');
 
--- saas_config 테이블 초기 데이터
-INSERT INTO saas_config (id, saas_admin_email, nickname, register_date, saas_alias)
-VALUES (1, 'test@gmail.com', 'psh0036', CURRENT_TIMESTAMP, 'slack_test');
-INSERT INTO saas_config (id, saas_admin_email, nickname, register_date, saas_alias)
-VALUES (2, 'test3@gmail.com', 'hsp0036', CURRENT_TIMESTAMP, 'grummmang');
-INSERT INTO saas_config (id, saas_admin_email, nickname, register_date, saas_alias)
-VALUES (3, 'test2@gmail.com', 'psh0036', CURRENT_TIMESTAMP, 'jira_test');
+-- workspace_config 테이블 초기 데이터
+INSERT INTO workspace_config (id, saas_admin_email, saas_name, register_date, token)
+VALUES (1, 'test@gmail.com', 'psh_slacktest', CURRENT_TIMESTAMP, 'slack_test_token');
+INSERT INTO workspace_config (id, saas_admin_email, saas_name, register_date, token)
+VALUES (2, 'test3@gmail.com', '구름망', CURRENT_TIMESTAMP, 'grummmang_token');
+INSERT INTO workspace_config (id, saas_admin_email, saas_name, register_date, token)
+VALUES (3, 'test2@gmail.com', 'psh_slacktest', CURRENT_TIMESTAMP, 'jira_test_token');
 
 -- admin 테이블 초기 데이터
 INSERT INTO admin (id, org_id, email, password, first_name, last_name, last_login)
@@ -23,9 +23,12 @@ INSERT INTO admin (id, org_id, email, password, first_name, last_name, last_logi
 VALUES (3, 2, 'test3@gmail.com', '1122', 'Steve', 'Park', CURRENT_TIMESTAMP);
 
 -- org_saas 테이블 초기 데이터
-INSERT INTO org_saas (id, org_id, saas_id, status, config_file, security_score)
-VALUES (1, 1, 1, 1, 1, 90);
-INSERT INTO org_saas (id, org_id, saas_id, status, config_file, security_score)
-VALUES (2, 1, 2, 1, 3, 95);
-INSERT INTO org_saas (id, org_id, saas_id, status, config_file, security_score)
-VALUES (3, 2, 1, 1, 2, 100);
+INSERT INTO org_saas (id, org_id, saas_id, status, space_id, config, security_score)
+VALUES (1, 1, 1, 1, 'T077VP0SP2M', 1, 90);
+INSERT INTO org_saas (id, org_id, saas_id, status, space_id, config, security_score)
+VALUES (2, 1, 2, 1, 'T077VP0SP2C', 2, 95);
+INSERT INTO org_saas (id, org_id, saas_id, status, space_id, config, security_score)
+VALUES (3, 2, 1, 1, 'T077VP0SP2A', 3, 100);
+
+
+-- space_list 테이블 초기 데이터

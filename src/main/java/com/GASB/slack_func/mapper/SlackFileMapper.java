@@ -1,12 +1,10 @@
 package com.GASB.slack_func.mapper;
 
-import com.GASB.slack_func.model.entity.Activities;
-import com.GASB.slack_func.model.entity.MonitoredUsers;
-import com.GASB.slack_func.model.entity.fileUpload;
-import com.GASB.slack_func.model.entity.StoredFile;
+import com.GASB.slack_func.model.entity.*;
+import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.slack.api.model.File;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -17,14 +15,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Component
+@RequiredArgsConstructor
 public class SlackFileMapper {
 
     private SlackUserRepo monitoredUsersRepository;
-
-    @Autowired
-    public SlackFileMapper(SlackUserRepo slackUserRepo) {
-        this.monitoredUsersRepository = slackUserRepo;
-    }
+    private OrgSaaSRepo orgSaaSRepo;
 
     public StoredFile toStoredFileEntity(File file, String hash, String filePath) {
         if (file == null) {
@@ -44,21 +39,21 @@ public class SlackFileMapper {
                 .collect(Collectors.toList());
     }
 
-    public fileUpload toFileUploadEntity(File file, int orgSaaSId, String hash) {
+    public fileUpload toFileUploadEntity(File file, OrgSaaS orgSaaS, String hash) {
         if (file == null) {
             return null;
         }
         return fileUpload.builder()
-                .orgSaaSId(orgSaaSId)
+                .orgSaaS(orgSaaS)
                 .saasFileId(file.getId())
                 .hash(hash)
                 .timestamp(file.getTimestamp())
                 .build();
     }
 
-    public List<fileUpload> toFileUploadEntity(List<File> files, int orgSaaSId, String hash) {
+    public List<fileUpload> toFileUploadEntity(List<File> files, OrgSaaS orgSaaS, String hash) {
         return files.stream()
-                .map(file -> toFileUploadEntity(file, orgSaaSId, hash))
+                .map(file -> toFileUploadEntity(file, orgSaaS, hash))
                 .collect(Collectors.toList());
     }
 

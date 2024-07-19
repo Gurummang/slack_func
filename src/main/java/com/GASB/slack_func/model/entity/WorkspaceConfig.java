@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Table(name = "workspace_config")
-public class workspace_config {
+public class WorkspaceConfig {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,7 +23,7 @@ public class workspace_config {
     @Column(name = "saas_admin_email", nullable = false, length = 100)
     private String saasAdminEmail;
 
-    @Column(name = "saasname", nullable = false, length = 100)
+    @Column(name = "saas_name", nullable = false, length = 100)
     private String saasname;
 
     @Column(name = "register_date", nullable = false)
@@ -32,6 +32,6 @@ public class workspace_config {
     @Column(name = "token", nullable = false, length = 100)
     private String token;
 
-    @OneToMany(mappedBy = "workspace_config", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "config", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrgSaaS> orgSaaSList;
 }

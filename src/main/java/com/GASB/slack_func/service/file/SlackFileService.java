@@ -8,7 +8,7 @@ import com.GASB.slack_func.repository.AV.VtReportRepository;
 import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.files.SlackFileRepository;
-import com.GASB.slack_func.repository.orgSaaS.OrgSaaSRepo;
+import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.GASB.slack_func.service.SlackApiService;
 import com.GASB.slack_func.service.SlackSpaceInfoService;
@@ -47,14 +47,16 @@ public class SlackFileService {
     private final OrgSaaSRepo orgSaaSRepo;
     private final FileStatusRepository fileStatusRepository;
     private final VtReportRepository vtReportRepository;
-
     @Transactional
-    public void fetchAndStoreFiles() {
+    public void fetchAndStoreFiles(String spaceId) {
         try {
             List<File> fileList = fetchFileList();
-            String workspaceName = slackSpaceInfoService.getCurrentSpaceName();
+
+            OrgSaaS orgSaaS = orgSaaSRepo.findBySpaceId(spaceId).get();
+            String spaceName = orgSaaS.getConfig().getSaasname();
+//            String workspaceName = slackSpaceInfoService.getCurrentSpaceName();
             for (File file : fileList) {
-                fileUtil.processAndStoreFile(file, workspaceName);
+                fileUtil.processAndStoreFile(file, spaceName);
             }
         } catch (Exception e) {
             log.error("Error processing files", e);
