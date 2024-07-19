@@ -24,6 +24,6 @@ public class fileUpload {
     @Column(nullable = false)
     private String hash;
 
-    @Column(nullable = false)
+    @Column(name = "upload_ts", nullable = false)
     private int timestamp;
 }
