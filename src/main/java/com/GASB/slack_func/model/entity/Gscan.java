@@ -6,22 +6,21 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Entity
 @Getter
-@NoArgsConstructor
+@Entity
 @Builder
 @AllArgsConstructor
-@Table(name = "channel_list")
-public class ChannelList {
+@NoArgsConstructor
+@Table(name = "gscan")
+public class Gscan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "org_saas_id", nullable = false)
-    private OrgSaaS orgSaas;
+    @JoinColumn(name = "file_id", nullable = false)
+    private StoredFile storedFile;
 
-    private String channelId;
-    private String channelName;
+    private String step2Detail;
 }

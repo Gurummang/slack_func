@@ -8,20 +8,20 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@NoArgsConstructor
 @Builder
 @AllArgsConstructor
-@Table(name = "channel_list")
-public class ChannelList {
-
+@NoArgsConstructor
+@Table(name = "dlp_report")
+public class DlpReport {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "org_saas_id", nullable = false)
-    private OrgSaaS orgSaas;
+    @JoinColumn(name = "file_id", nullable = false)
+    private StoredFile storedFile;
 
-    private String channelId;
-    private String channelName;
+    private Boolean dlp;
+    private String resultData;
+
 }

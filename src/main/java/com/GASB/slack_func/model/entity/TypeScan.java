@@ -8,20 +8,21 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@NoArgsConstructor
 @Builder
 @AllArgsConstructor
-@Table(name = "channel_list")
-public class ChannelList {
+@NoArgsConstructor
+@Table(name = "type_scan")
+public class TypeScan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "org_saas_id", nullable = false)
-    private OrgSaaS orgSaas;
+    @JoinColumn(name = "file_id", nullable = false)
+    private fileUpload file_upload;
 
-    private String channelId;
-    private String channelName;
+    private Boolean consistence;
+    private String mimetype;
+    private String extension;
 }

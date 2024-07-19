@@ -1,13 +1,11 @@
 package com.GASB.slack_func.model.entity;
 
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
-@Setter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @Entity
 public class FileStatus {
@@ -20,16 +18,11 @@ public class FileStatus {
     @JoinColumn(name = "file_id", referencedColumnName = "id")
     private StoredFile storedFile;
 
+    @Builder.Default
     private int GscanStatus = -1;
+    @Builder.Default
     private int DlpStatus = -1;
+    @Builder.Default
     private int VtStatus = -1;
-
-    @Builder
-    public FileStatus(StoredFile storedFile, Integer GscanStatus, Integer DlpStatus, Integer VtStatus) {
-        this.storedFile = storedFile;
-        this.GscanStatus = (GscanStatus != null) ? GscanStatus : -1;
-        this.DlpStatus = (DlpStatus != null) ? DlpStatus : -1;
-        this.VtStatus = (VtStatus != null) ? VtStatus : -1;
-    }
 
 }
