@@ -6,7 +6,7 @@ import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.channel.SlackChannelRepository;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.files.SlackFileRepository;
-import com.GASB.slack_func.repository.orgSaaS.OrgSaaSRepo;
+import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.slack.api.model.File;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +47,7 @@ public class FileUtil {
 
     private final S3Client s3Client;
 
-    public void processAndStoreFile(File file, String workspaceName) throws IOException, NoSuchAlgorithmException {
+    public void processAndStoreFile(File file, String workspaceName ) throws IOException, NoSuchAlgorithmException {
         byte[] fileData = downloadFile(file.getUrlPrivateDownload());
         String hash = calculateHash(fileData);
 
@@ -74,14 +74,15 @@ public class FileUtil {
         String uploadedChannelPath = String.format("%s/%s/%s/%s", saasName, workspaceName, channelName, uploadedUserName);
 
         // S3에 저장될 키 생성
-        String s3Key = String.format("%s/%s/%s/%s", saasName, workspaceName, channelName, file.getName());
+//        String s3Key = String.format("%s/%s/%s/%s", saasName, workspaceName, channelName, file.getName());
 
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, filePath);
-        fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, 1, hash);
+
+        fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, saas, hash); //file이 timestamp가 안된대요
         Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user);
         activity.setUploadChannel(uploadedChannelPath);
 
-        uploadFileToS3(filePath, s3Key);
+//        uploadFileToS3(filePath, s3Key);
 
         if (isFileNotStored(storedFile, fileUploadObject)) {
             storedFilesRepository.save(storedFile);
@@ -191,5 +192,11 @@ public class FileUtil {
 
     private String getFirstChannelId(File file) {
         return file.getChannels().isEmpty() ? null : file.getChannels().get(0);
+    }
+
+
+    public String TokenSelector(OrgSaaS orgSaaSObject) {
+        String used_token = orgSaaSObject.getConfig().getToken();
+        return used_token;
     }
 }
