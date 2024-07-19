@@ -1,13 +1,13 @@
 package com.GASB.slack_func.model.entity;
 
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
+@Builder
 @Table(name = "stored_file")
 public class StoredFile {
     @Id
@@ -25,13 +25,4 @@ public class StoredFile {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String savePath;
 
-    @Builder
-    public StoredFile(long id, String fileId, String saltedHash, int size, String type, String savePath){
-        this.id = id;
-//        this.fileId = fileId;
-        this.saltedHash = saltedHash;
-        this.size = size;
-        this.type = type;
-        this.savePath = savePath;
-    }
 }

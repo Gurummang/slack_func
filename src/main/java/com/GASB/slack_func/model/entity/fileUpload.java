@@ -1,30 +1,29 @@
 package com.GASB.slack_func.model.entity;
 
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Getter
-@Setter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @Table(indexes = @Index(name = "idx_saas_file_id", columnList = "saasFileId", unique = true), name = "file_upload")
 public class fileUpload {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-    private int orgSaaSId;
-    private String saasFileId;
-    private String hash;
-    private int timestamp;
 
-    @Builder
-    public fileUpload(int orgSaaSId, String saasFileId, String hash, int timestamp) {
-        this.orgSaaSId = orgSaaSId;
-        this.saasFileId = saasFileId;
-        this.hash = hash;
-        this.timestamp = timestamp;
-    }
+    @ManyToOne
+    @JoinColumn(name = "org_saas_id", nullable = false)
+    private OrgSaaS orgSaaS;
+
+    @Column(name = "saas_file_id", nullable = false, unique = true)
+    private String saasFileId;
+
+    @Column(nullable = false)
+    private String hash;
+
+    @Column(name = "upload_ts", nullable = false)
+    private int timestamp;
 }

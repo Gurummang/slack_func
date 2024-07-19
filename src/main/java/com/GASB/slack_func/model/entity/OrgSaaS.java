@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Getter
 @NoArgsConstructor
@@ -29,10 +31,17 @@ public class OrgSaaS {
     @Column(name = "status", nullable = false)
     private int status;
 
+    @Column(name = "space_id")
+    private String spaceId;
+
     @ManyToOne
-    @JoinColumn(name = "config_file", nullable = false)
-    private SaasConfig configFile;
+    @JoinColumn(name = "config", nullable = false)
+    private WorkspaceConfig config;
 
     @Column(name = "security_score")
     private int securityScore;
+
+    @OneToMany(mappedBy = "orgSaas", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ChannelList> channels;
+
 }

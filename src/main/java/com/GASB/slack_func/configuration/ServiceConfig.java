@@ -44,4 +44,9 @@ public class ServiceConfig {
                 .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
                 .build();
     }
+
+    @Bean
+    public ExtractSpaceId reqeustToJson() {
+        return new ExtractSpaceId();
+    }
 }
