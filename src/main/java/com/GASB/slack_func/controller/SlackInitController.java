@@ -19,7 +19,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/connect/slack/")
-public class SlackInfoController {
+public class SlackInitController {
 
     private final SlackChannelService slackChannelService;
     private final SlackUserService slackUserService;
