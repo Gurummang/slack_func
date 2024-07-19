@@ -36,7 +36,7 @@ public class OrgSaaS {
 
     @ManyToOne
     @JoinColumn(name = "config", nullable = false)
-    private workspace_config config;
+    private WorkspaceConfig config;
 
     @Column(name = "security_score")
     private int securityScore;
