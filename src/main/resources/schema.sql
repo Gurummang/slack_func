@@ -69,13 +69,13 @@ CREATE TABLE IF NOT EXISTS activities (
     FOREIGN KEY (user_id) REFERENCES monitored_users(user_id)
     );
 
-CREATE TABLE IF NOT EXISTS stored_file (
-                                           id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                           salted_hash TEXT NOT NULL,
-                                           size INT NOT NULL,
-                                           type VARCHAR(255),
-    save_path TEXT NOT NULL
-    );
+CREATE TABLE stored_file (
+                             id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                             salted_hash VARCHAR(255) NOT NULL,
+                             size BIGINT NOT NULL,
+                             type VARCHAR(10) NOT NULL,
+                             save_path VARCHAR(255) NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS file_status (
                                            id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -134,5 +134,6 @@ CREATE TABLE IF NOT EXISTS gscan (
                                      id BIGINT AUTO_INCREMENT PRIMARY KEY,
                                      file_id BIGINT NOT NULL,
                                      step2_detail TEXT,
+                                     detected BOOLEAN,
                                      FOREIGN KEY (file_id) REFERENCES stored_file(id)
     );

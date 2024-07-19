@@ -1,8 +1,8 @@
 package com.GASB.slack_func.controller;
 
 import com.GASB.slack_func.configuration.ExtractSpaceId;
-import com.GASB.slack_func.model.dto.SlackRecentFileDTO;
-import com.GASB.slack_func.model.dto.SlackTotalFileDataDto;
+import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
+import com.GASB.slack_func.model.dto.file.SlackTotalFileDataDto;
 import com.GASB.slack_func.repository.org.AdminRepo;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.service.file.SlackFileService;

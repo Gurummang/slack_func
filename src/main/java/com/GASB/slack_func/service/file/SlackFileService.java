@@ -1,7 +1,9 @@
 package com.GASB.slack_func.service.file;
 
-import com.GASB.slack_func.model.dto.SlackRecentFileDTO;
-import com.GASB.slack_func.model.dto.SlackTotalFileDataDto;
+import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
+import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
+import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
+import com.GASB.slack_func.model.dto.file.SlackTotalFileDataDto;
 import com.GASB.slack_func.model.entity.*;
 import com.GASB.slack_func.repository.AV.FileStatusRepository;
 import com.GASB.slack_func.repository.AV.VtReportRepository;
@@ -11,7 +13,6 @@ import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.GASB.slack_func.service.SlackApiService;
-import com.GASB.slack_func.service.SlackSpaceInfoService;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
@@ -35,11 +36,7 @@ public class SlackFileService {
 
 
     private final SlackApiService slackApiService;
-
-    private final SlackSpaceInfoService slackSpaceInfoService;
-
     private final FileUtil fileUtil;
-
     private final FileUploadRepository fileUploadRepository;
     private final SlackFileRepository storedFilesRepository;
     private final FileActivityRepo activitiesRepository;
@@ -118,7 +115,7 @@ public class SlackFileService {
                         .filePath(Objects.requireNonNull(activity).getUploadChannel());
 //                        .filePath(storedFile.getSavePath());
 
-                VtReport vtReport = vtReportRepository.findByStoredFile(storedFile);
+                VtReport vtReport = vtReportRepository.findByStoredFile(storedFile).orElse(null);
                 if (vtReport != null) {
                     SlackTotalFileDataDto.FileDetail.VtScanResult vtScanResult = SlackTotalFileDataDto.FileDetail.VtScanResult.builder()
                             .threatLabel(vtReport.getThreatLabel())
@@ -158,5 +155,30 @@ public class SlackFileService {
         totalFileDataDto.setFiles(fileDetails);
 
         return totalFileDataDto;
+    }
+
+
+    // 전달값으로 어떤 조직인지, 어떤 SaaS인지 구분 필요, 근데 지금 api 엔드포인트 자체가 SaaS를 내포해서 일단은 Org
+    public SlackFileSizeDto slackFileSize(OrgSaaS orgSaaSObject) {
+        List<fileUpload> TargetFileList = fileUploadRepository.findByOrgSaaS(orgSaaSObject);
+
+        return SlackFileSizeDto.builder()
+                .totalSize((float) fileUtil.calculateTotalFileSize(TargetFileList) / 1048576)
+                .sensitiveSize((float) fileUtil.CalcSlackSensitiveSize(TargetFileList))
+                .maliciousSize((float) fileUtil.CalcSlackMaliciousSize(TargetFileList))
+                .build();
+    }
+
+
+    public SlackFileCountDto slackFileCount(OrgSaaS orgSaaSObject) {
+        List<fileUpload> TargetFileList = fileUploadRepository.findByOrgSaaS(orgSaaSObject);
+        int totalFileCount = TargetFileList.size();
+
+        return SlackFileCountDto.builder()
+                .totalFiles(totalFileCount)
+                .sensitiveFiles(fileUtil.countSensitiveFiles(TargetFileList))
+                .maliciousFiles(fileUtil.countMaliciousFiles(TargetFileList))
+                .connectedAccounts(fileUtil.countConnectedAccounts(orgSaaSObject))
+                .build();
     }
 }
