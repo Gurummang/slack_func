@@ -46,11 +46,11 @@ public class SlackFileService {
         try {
             List<File> fileList = fetchFileList();
 
-            OrgSaaS orgSaaS = orgSaaSRepo.findBySpaceId(spaceId).get();
-            String spaceName = orgSaaS.getConfig().getSaasname();
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(spaceId).get();
+//            String spaceName = orgSaaS.getConfig().getSaasname();
 //            String workspaceName = slackSpaceInfoService.getCurrentSpaceName();
             for (File file : fileList) {
-                fileUtil.processAndStoreFile(file, spaceName);
+                fileUtil.processAndStoreFile(file, orgSaaSObject);
             }
         } catch (Exception e) {
             log.error("Error processing files", e);
@@ -166,6 +166,25 @@ public class SlackFileService {
                 .build();
     }
 
+    public SlackFileSizeDto SumOfSlackFileSize(List<OrgSaaS> orgSaaSList){
+        int totalSize = 0;
+        int sensitiveSize = 0;
+        int maliciousSize = 0;
+
+        for (OrgSaaS orgSaaSObject : orgSaaSList){
+            List<fileUpload> TargetFileList = fileUploadRepository.findByOrgSaaS(orgSaaSObject);
+            totalSize += fileUtil.calculateTotalFileSize(TargetFileList);
+            sensitiveSize += fileUtil.CalcSlackSensitiveSize(TargetFileList);
+            maliciousSize += fileUtil.CalcSlackMaliciousSize(TargetFileList);
+        }
+
+        return SlackFileSizeDto.builder()
+                .totalSize((float) totalSize / 1048576)
+                .sensitiveSize((float) sensitiveSize)
+                .maliciousSize((float) maliciousSize)
+                .build();
+    }
+
 
     public SlackFileCountDto slackFileCount(OrgSaaS orgSaaSObject) {
         List<fileUpload> TargetFileList = fileUploadRepository.findByOrgSaaS(orgSaaSObject);
@@ -176,6 +195,28 @@ public class SlackFileService {
                 .sensitiveFiles(fileUtil.countSensitiveFiles(TargetFileList))
                 .maliciousFiles(fileUtil.countMaliciousFiles(TargetFileList))
                 .connectedAccounts(fileUtil.countConnectedAccounts(orgSaaSObject))
+                .build();
+    }
+
+    public SlackFileCountDto SumOfSlackFileCount(List<OrgSaaS> orgSaaSList){
+        int totalFiles = 0;
+        int sensitiveFiles = 0;
+        int maliciousFiles = 0;
+        int connectedAccounts = 0;
+
+        for (OrgSaaS orgSaaSObject : orgSaaSList){
+            List<fileUpload> TargetFileList = fileUploadRepository.findByOrgSaaS(orgSaaSObject);
+            totalFiles += TargetFileList.size();
+            sensitiveFiles += fileUtil.countSensitiveFiles(TargetFileList);
+            maliciousFiles += fileUtil.countMaliciousFiles(TargetFileList);
+            connectedAccounts += fileUtil.countConnectedAccounts(orgSaaSObject);
+        }
+
+        return SlackFileCountDto.builder()
+                .totalFiles(totalFiles)
+                .sensitiveFiles(sensitiveFiles)
+                .maliciousFiles(maliciousFiles)
+                .connectedAccounts(connectedAccounts)
                 .build();
     }
 }

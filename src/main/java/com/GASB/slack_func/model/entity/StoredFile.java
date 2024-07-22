@@ -3,9 +3,6 @@ package com.GASB.slack_func.model.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.sql.Timestamp;
 
 @Getter
 @Setter
@@ -31,9 +28,12 @@ public class StoredFile {
     @Column(name="save_path",columnDefinition = "TEXT", nullable = false)
     private String SavePath;
 
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false, name = "created_at")
-    private Timestamp createdAt;
+//    @Column(nullable = false, updatable = false, name = "created_at")
+//    private Timestamp createdAt;
+
+    @Column(name = "processed", nullable = false)
+    @Builder.Default
+    private boolean processed = false;
 
     @JsonIgnore
     @OneToOne(mappedBy = "storedFile", cascade = CascadeType.ALL)
