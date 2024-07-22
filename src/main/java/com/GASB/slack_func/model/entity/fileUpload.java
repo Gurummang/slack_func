@@ -17,7 +17,7 @@ public class fileUpload {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "org_saas_id", nullable = false)
+    @JoinColumn(name = "org_saas_id", nullable = false, referencedColumnName = "id")
     private OrgSaaS orgSaaS;
 
     @Column(name = "saas_file_id", nullable = false, unique = true)
