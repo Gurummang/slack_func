@@ -16,4 +16,5 @@ public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long> , Sla
     List<MonitoredUsers> findByOrgSaaS(OrgSaaS orgSaaS);
 
     boolean existsByUserId(String userId);
+    // Other methods
 }

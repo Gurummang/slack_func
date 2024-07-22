@@ -78,7 +78,6 @@ public class FileUtil {
         String orgName = orgSaaSObject.getOrg().getOrgName();
         // 파일을 로컬에 저장하고 경로를 얻음
         String filePath = saveFileToLocal(fileData, saasName, workspaceName, channelName, file.getName());
-        log.info("File saved locally at: {}", filePath);
 
         // 업로드된 경로 생성
         String uploadedChannelPath = String.format("%s/%s/%s/%s/%s",orgName, saasName, workspaceName, channelName, uploadedUserName);
