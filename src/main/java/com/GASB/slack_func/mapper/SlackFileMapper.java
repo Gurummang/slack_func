@@ -49,7 +49,7 @@ public class SlackFileMapper {
                 .orgSaaS(orgSaaS)
                 .saasFileId(file.getId())
                 .hash(hash)
-                .timestamp(new Timestamp(file.getCreated()))
+                .timestamp(new Timestamp(file.getTimestamp()))
                 .build();
     }
 
