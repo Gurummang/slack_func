@@ -1,9 +1,11 @@
 package com.GASB.slack_func.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -14,15 +16,34 @@ public class StoredFile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-//    private String fileId;
-
-    @Column(columnDefinition = "TEXT", nullable = false) //원래는 false가 맞음
+    @Column(name = "salted_hash", columnDefinition = "TEXT", nullable = false)
     private String saltedHash;
 
+    @Column(name = "size")
     private int size;
+
+    @Column(name = "type", nullable = false)
     private String type;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String savePath;
+    @Column(name="save_path",columnDefinition = "TEXT", nullable = false)
+    private String SavePath;
 
+//    @Column(nullable = false, updatable = false, name = "created_at")
+//    private Timestamp createdAt;
+
+    @Column(name = "processed", nullable = false)
+    @Builder.Default
+    private boolean processed = false;
+
+    @JsonIgnore
+    @OneToOne(mappedBy = "storedFile", cascade = CascadeType.ALL)
+    private VtReport vtReport;
+
+    @JsonIgnore
+    @OneToOne(mappedBy = "storedFile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private FileStatus fileStatus;
+
+    @JsonIgnore
+    @OneToOne(mappedBy = "storedFile", cascade = CascadeType.ALL)
+    private Gscan scanTable;
 }

@@ -19,9 +19,12 @@ public class ChannelList {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "org_saas_id", nullable = false)
+    @JoinColumn(name = "org_saas_id", nullable = false, referencedColumnName = "id")
     private OrgSaaS orgSaas;
 
+    @Column(name = "channel_id", nullable = false, unique = true, length = 100)
     private String channelId;
+
+    @Column(name="channel_name", nullable = false, length = 100)
     private String channelName;
 }
