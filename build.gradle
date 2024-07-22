@@ -34,6 +34,22 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+<<<<<<< HEAD
+	testImplementation 'org.mockito:mockito-core'
+
+	//slack
+	implementation 'com.slack.api:slack-api-client:1.40.2'
+
+	//json
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
+
+	//aws
+	implementation platform('software.amazon.awssdk:bom:2.21.1')
+	implementation 'software.amazon.awssdk:s3'
+
+
+=======
+>>>>>>> main
 }
 
 tasks.named('test') {
