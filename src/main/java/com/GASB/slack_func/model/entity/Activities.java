@@ -28,7 +28,7 @@ public class Activities {
     @Column(name = "event_type", length = 100)
     private String eventType;
 
-    @Column(name = "saas_file_id", length = 100)
+    @Column(name = "saas_file_id", length = 64)
     private String saasFileId;
 
     @Column(name = "file_name", length = 255)

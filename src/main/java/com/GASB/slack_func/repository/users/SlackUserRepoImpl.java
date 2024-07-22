@@ -17,4 +17,6 @@ public class SlackUserRepoImpl implements SlackUserIF{
         users.forEach(entityManager::persist);
     }
 
+    // Other methods
+
 }

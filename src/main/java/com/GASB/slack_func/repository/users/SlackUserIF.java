@@ -6,5 +6,4 @@ import java.util.List;
 
 public interface SlackUserIF {
     void saveAllUsers(List<MonitoredUsers> users);
-//    List<MonitoredUsers> searchUser(String userName);
 }

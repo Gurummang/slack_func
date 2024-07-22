@@ -8,6 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface SlackFileRepository extends JpaRepository<StoredFile, Long> {
-//    Optional<storedFiles> findByFileId(String fileId);
     Optional<StoredFile> findBySaltedHash(String saltedHash);
 }
