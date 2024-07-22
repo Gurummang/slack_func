@@ -18,10 +18,13 @@ public class DlpReport {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "file_id", nullable = false)
+    @JoinColumn(name = "file_id", nullable = false, referencedColumnName = "id")
     private StoredFile storedFile;
 
+    @Column(name="dlp")
     private Boolean dlp;
+
+    @Column(name = "result_data", columnDefinition = "TEXT")
     private String resultData;
 
 }

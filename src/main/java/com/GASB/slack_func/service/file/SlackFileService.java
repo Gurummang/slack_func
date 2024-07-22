@@ -21,9 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -78,7 +75,7 @@ public class SlackFileService {
                         .fileName(activity.getFileName())
                         .uploadedBy(uploadedBy)
                         .fileType(storedFile.getType())
-                        .uploadTimestamp(LocalDateTime.ofInstant(Instant.ofEpochSecond(upload.getTimestamp()), ZoneId.systemDefault()))
+                        .uploadTimestamp(upload.getTimestamp().toLocalDateTime())
                         .build();
             }
             return null;
@@ -90,7 +87,7 @@ public class SlackFileService {
         List<SlackTotalFileDataDto.FileDetail> fileDetails = fileUploads.stream().map(fileUpload -> {
             SlackTotalFileDataDto.FileDetail.FileDetailBuilder detailBuilder = SlackTotalFileDataDto.FileDetail.builder()
                     .fileId(fileUpload.getSaasFileId())
-                    .timestamp(LocalDateTime.ofInstant(Instant.ofEpochSecond(fileUpload.getTimestamp()), ZoneId.systemDefault()));
+                    .timestamp(fileUpload.getTimestamp().toLocalDateTime());
 
             Activities activity = activitiesRepository.findBysaasFileId(fileUpload.getSaasFileId()).orElse(null);
             if (activity != null) {

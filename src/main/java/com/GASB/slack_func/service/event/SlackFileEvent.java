@@ -1,7 +1,7 @@
 package com.GASB.slack_func.service.event;
 
+import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.service.SlackApiService;
-import com.GASB.slack_func.service.SlackSpaceInfoService;
 import com.GASB.slack_func.service.file.FileUtil;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.model.File;
@@ -18,20 +18,25 @@ import java.util.Map;
 public class SlackFileEvent {
 
     private final FileUtil fileService;
-    private final SlackSpaceInfoService slackSpaceInfoService;
     private final SlackApiService slackApiService;
+    private final OrgSaaSRepo orgSaaSRepo;
 
     public void handleFileEvent(Map<String, Object> payload) {
         log.info("Handling file event with payload: {}", payload);
         try {
-            String workspaceName = slackSpaceInfoService.getCurrentSpaceName();
-            File fileInfo = slackApiService.fetchFileInfo(payload.get("file_id").toString());
-            fileService.processAndStoreFile(fileInfo, workspaceName);
+            String teamId = payload.get("team_id").toString();
+            String fileId = payload.get("file_id").toString();
+
+            String slackSpaceName = orgSaaSRepo.findBySpaceId(teamId)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid team ID: " + teamId))
+                    .getConfig().getSaasname();
+
+            File fileInfo = slackApiService.fetchFileInfo(fileId);
+            fileService.processAndStoreFile(fileInfo, slackSpaceName);
+
             log.info("File event processed successfully for file ID: {}", fileInfo.getId());
-        } catch (SlackApiException e) {
-            log.error("Error fetching file info from Slack API", e);
-        } catch (IOException e) {
-            log.error("Error processing file data", e);
+        } catch (SlackApiException | IOException e) {
+            log.error("Error fetching file info or processing file data", e);
         } catch (Exception e) {
             log.error("Unexpected error processing file event", e);
         }

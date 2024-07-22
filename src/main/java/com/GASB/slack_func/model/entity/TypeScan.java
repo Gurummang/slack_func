@@ -19,10 +19,18 @@ public class TypeScan {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "file_id", nullable = false)
+    @JoinColumn(name = "upload_id", nullable = false, referencedColumnName = "id")
     private fileUpload file_upload;
 
-    private Boolean consistence;
+    @Column(name = "correct")
+    private Boolean correct;
+
+    @Column(name="mimetype")
     private String mimetype;
+
+    @Column(name = "signature")
+    private String signature;
+
+    @Column(name = "extension")
     private String extension;
 }

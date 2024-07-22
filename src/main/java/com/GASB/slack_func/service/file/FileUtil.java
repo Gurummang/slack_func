@@ -12,6 +12,7 @@ import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.slack.api.model.File;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,6 +56,7 @@ public class FileUtil {
 
     private final S3Client s3Client;
 
+    @Transactional
     public void processAndStoreFile(File file, String workspaceName ) throws IOException, NoSuchAlgorithmException {
         byte[] fileData = downloadFile(file.getUrlPrivateDownload());
         String hash = calculateHash(fileData);
@@ -73,24 +75,24 @@ public class FileUtil {
         if (saas == null) return;
 
         String saasName = saas.getSaas().getSaasName();
-
+        String orgName = saas.getOrg().getOrgName();
         // 파일을 로컬에 저장하고 경로를 얻음
         String filePath = saveFileToLocal(fileData, saasName, workspaceName, channelName, file.getName());
         log.info("File saved locally at: {}", filePath);
 
         // 업로드된 경로 생성
-        String uploadedChannelPath = String.format("%s/%s/%s/%s", saasName, workspaceName, channelName, uploadedUserName);
+        String uploadedChannelPath = String.format("%s/%s/%s/%s/%s",orgName, saasName, workspaceName, channelName, uploadedUserName);
 
         // S3에 저장될 키 생성
-//        String s3Key = String.format("%s/%s/%s/%s", saasName, workspaceName, channelName, file.getName());
+        String s3Key = String.format("%s/%s/%s/%s/%s",orgName, saasName, workspaceName, channelName, file.getName());
 
-        StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, filePath);
+        StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
 
         fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, saas, hash); //file이 timestamp가 안된대요
         Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user);
         activity.setUploadChannel(uploadedChannelPath);
 
-//        uploadFileToS3(filePath, s3Key);
+        uploadFileToS3(filePath, s3Key);
 
         if (isFileNotStored(storedFile, fileUploadObject)) {
             storedFilesRepository.save(storedFile);

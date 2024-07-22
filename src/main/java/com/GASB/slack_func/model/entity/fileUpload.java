@@ -3,15 +3,17 @@ package com.GASB.slack_func.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.sql.Timestamp;
+
 @Entity
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(indexes = @Index(name = "idx_saas_file_id", columnList = "saasFileId", unique = true), name = "file_upload")
+@Table(name = "file_upload")
 public class fileUpload {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
@@ -21,9 +23,9 @@ public class fileUpload {
     @Column(name = "saas_file_id", nullable = false, unique = true)
     private String saasFileId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name="salted_hash")
     private String hash;
 
     @Column(name = "upload_ts", nullable = false)
-    private int timestamp;
+    private Timestamp timestamp;
 }

@@ -11,18 +11,21 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "gscan")
+@Table(name = "scan_table")
 public class Gscan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
-    @JoinColumn(name = "file_id", nullable = false)
+    @OneToOne
+    @JoinColumn(name = "stored_file_id", nullable = false,referencedColumnName = "id")
     private StoredFile storedFile;
 
+    @Column(name = "step2_detail", columnDefinition = "TEXT")
     private String step2Detail;
 
+
+    @Column(name = "detect")
     private boolean detected;
 }
