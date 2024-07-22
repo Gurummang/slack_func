@@ -19,7 +19,7 @@ public class VtReport {
     private long id;
 
     @OneToOne
-    @JoinColumn(name = "stored_file_id", referencedColumnName = "id")
+    @JoinColumn(name = "file_id", referencedColumnName = "id")
     private StoredFile storedFile;
 
     @Column(name = "type")

@@ -82,7 +82,7 @@ public class SlackInitController {
         Map<String, String> response = new HashMap<>();
         try {
 //            slackSpaceInfoService.slackSpaceRegister();
-            slackChannelService.slackFirstChannels("T077VP0SP2M",1); //임시 org_saas_id
+            slackChannelService.slackFirstChannels(spaceId,1); //임시 org_saas_id
             slackUserService.slackFirstUsers(spaceId);
             slackFileService.fetchAndStoreFiles(spaceId);
             response.put("status", "success");

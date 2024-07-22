@@ -32,8 +32,9 @@ public class SlackBoardController {
     @PostMapping("/files/size")
     public ResponseEntity<SlackFileSizeDto> fetchFileSize(){
         try{
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSaas(1,saasRepo.findById(1).orElse(null)).orElse(null);
-            SlackFileSizeDto slackFileSizeDto = slackFileService.slackFileSize(orgSaaSObject);
+            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(1,saasRepo.findById(1).orElse(null));
+            log.info("orgSaaSList: {}", orgSaaSList);
+            SlackFileSizeDto slackFileSizeDto = slackFileService.SumOfSlackFileSize(orgSaaSList);
             return ResponseEntity.ok(slackFileSizeDto);
         } catch (Exception e) {
             log.error("Error fetching file size", e);
@@ -47,8 +48,8 @@ public class SlackBoardController {
 
         try{
             Saas saasObject = saasRepo.findById(1).orElse(null);
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSaas(1,saasObject).orElse(null);
-            SlackFileCountDto slackFileCountDto = slackFileService.slackFileCount(orgSaaSObject);
+            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(1,saasObject);
+            SlackFileCountDto slackFileCountDto = slackFileService.SumOfSlackFileCount(orgSaaSList);
             return ResponseEntity.ok(slackFileCountDto);
         } catch (Exception e) {
             log.error("Error fetching file count", e);

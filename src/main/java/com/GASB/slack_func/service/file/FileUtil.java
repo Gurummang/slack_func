@@ -57,10 +57,10 @@ public class FileUtil {
     private final S3Client s3Client;
 
     @Transactional
-    public void processAndStoreFile(File file, String workspaceName ) throws IOException, NoSuchAlgorithmException {
+    public void processAndStoreFile(File file,OrgSaaS orgSaaSObject ) throws IOException, NoSuchAlgorithmException {
         byte[] fileData = downloadFile(file.getUrlPrivateDownload());
         String hash = calculateHash(fileData);
-
+        String workspaceName = orgSaaSObject.getConfig().getSaasname();
         // 채널 및 사용자 정보 가져오기
         String channelId = getFirstChannelId(file);
         String userId = file.getUser();
@@ -71,11 +71,11 @@ public class FileUtil {
         MonitoredUsers user = fetchUserById(userId);
         if (user == null) return;
 
-        OrgSaaS saas = fetchOrgSaaSByUser(user);
-        if (saas == null) return;
+//        OrgSaaS saas = fetchOrgSaaSByUser(user);
+//        if (saas == null) return;
 
-        String saasName = saas.getSaas().getSaasName();
-        String orgName = saas.getOrg().getOrgName();
+        String saasName = orgSaaSObject.getSaas().getSaasName();
+        String orgName = orgSaaSObject.getOrg().getOrgName();
         // 파일을 로컬에 저장하고 경로를 얻음
         String filePath = saveFileToLocal(fileData, saasName, workspaceName, channelName, file.getName());
         log.info("File saved locally at: {}", filePath);
@@ -88,7 +88,7 @@ public class FileUtil {
 
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
 
-        fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, saas, hash); //file이 timestamp가 안된대요
+        fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash); //file이 timestamp가 안된대요
         Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user);
         activity.setUploadChannel(uploadedChannelPath);
 
@@ -211,6 +211,7 @@ public class FileUtil {
     }
 
     protected int calculateTotalFileSize(List<fileUpload> targetFileList) {
+        log.info("targetFileList: {}", targetFileList);
         return targetFileList.stream()
                 .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
                 .filter(Optional::isPresent)
@@ -235,32 +236,23 @@ public class FileUtil {
                 .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .filter(storedFile -> {
-                    FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
-                    if (fileStatus != null && fileStatus.getGscanStatus() == 1) {
-                        return vtReportRepository.findByStoredFile(storedFile)
-                                .map(vtReport -> vtReport.getThreatLabel() != null)
-                                .orElse(false);
-                    }
-                    return false;
-                })
+                .filter(storedFile -> vtReportRepository.findByStoredFile(storedFile)
+                        .map(vtReport -> vtReport.getThreatLabel() != null)
+                        .orElse(false))
                 .collect(Collectors.toList());
     }
+
     private List<StoredFile> getSensitiveFileList(List<fileUpload> targetFileList) {
         return targetFileList.stream()
                 .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .filter(storedFile -> {
-                    FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
-                    if (fileStatus != null && fileStatus.getDlpStatus() == 1) {
-                        DlpReport dlpReport = dlpRepo.findByStoredFile(storedFile).orElse(null);
-                        return dlpReport != null && dlpReport.getDlp();
-                    }
-                    return false;
-                })
+                .filter(storedFile -> dlpRepo.findByStoredFile(storedFile)
+                        .map(DlpReport::getDlp)
+                        .orElse(false))
                 .collect(Collectors.toList());
     }
+
 
 
 
