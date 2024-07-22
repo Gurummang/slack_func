@@ -8,6 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Table(name = "file_status")
 public class FileStatus {
 
     @Id
@@ -19,10 +20,13 @@ public class FileStatus {
     private StoredFile storedFile;
 
     @Builder.Default
+    @Column(name = "gscan_status")
     private int GscanStatus = -1;
     @Builder.Default
+    @Column(name = "dlp_status")
     private int DlpStatus = -1;
     @Builder.Default
+    @Column(name = "vt_status")
     private int VtStatus = -1;
 
 }

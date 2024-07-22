@@ -3,6 +3,8 @@ package com.GASB.slack_func.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.sql.Timestamp;
+
 @Entity
 @Getter
 @Setter
@@ -11,15 +13,16 @@ import lombok.*;
 @Builder
 @Table(name = "monitored_users")
 public class MonitoredUsers {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    private int id;
 
-    @Column(name = "user_id", nullable = false, unique = true, length = 100)
+    @Id
+    @Column(name = "user_id", unique = true, length = 100)
     private String userId;
 
     @ManyToOne
-    @JoinColumn(name = "org_saas_id", nullable = false)
+    @JoinColumn(name = "org_saas_id", nullable = false,referencedColumnName = "id")
     private OrgSaaS orgSaaS;
 
     @Column(name = "email", length = 100)
@@ -29,5 +32,6 @@ public class MonitoredUsers {
     private String userName;
 
     @Column(name = "status")
-    private Long timestamp;
+    private Timestamp timestamp;
+    //이것도 타임스탬프로 해야하나
 }

@@ -3,7 +3,7 @@ package com.GASB.slack_func.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 
 @Entity
 @Getter
@@ -20,10 +20,10 @@ public class AdminUsers {
     @JoinColumn(name = "org_id", nullable = false)
     private Org org;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
     @Setter
@@ -36,5 +36,5 @@ public class AdminUsers {
 
     @Setter
     @Column(name = "last_login")
-    private LocalDateTime lastLogin;
+    private Timestamp lastLogin;
 }

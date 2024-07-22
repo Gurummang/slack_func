@@ -17,7 +17,7 @@ import java.util.List;
 public class Org {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(name = "org_name", nullable = false, length = 100)
     private String orgName;

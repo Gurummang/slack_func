@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 import java.util.List;
 
 @Entity
@@ -23,14 +23,20 @@ public class WorkspaceConfig {
     @Column(name = "saas_admin_email", nullable = false, length = 100)
     private String saasAdminEmail;
 
-    @Column(name = "saas_name", nullable = false, length = 100)
+    @Column(name = "workspace_name", nullable = false, length = 100)
     private String saasname;
 
     @Column(name = "register_date", nullable = false)
-    private LocalDateTime registerDate;
+    private Timestamp registerDate;
 
     @Column(name = "token", nullable = false, length = 100)
     private String token;
+
+    @Column(name = "alias")
+    private String alias;
+
+    @Column(name = "validation", nullable = false)
+    private String validation;
 
     @OneToMany(mappedBy = "config", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrgSaaS> orgSaaSList;
