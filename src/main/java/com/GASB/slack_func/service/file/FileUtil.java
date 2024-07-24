@@ -16,8 +16,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -53,12 +52,13 @@ public class FileUtil {
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
-
+    private static final String HASH_ALGORITHM = "SHA-256";
     private final S3Client s3Client;
 
     @Transactional
     public void processAndStoreFile(File file,OrgSaaS orgSaaSObject ) throws IOException, NoSuchAlgorithmException {
-        byte[] fileData = downloadFile(file.getUrlPrivateDownload());
+        String token = TokenSelector(orgSaaSObject);
+        byte[] fileData = downloadFile(file.getUrlPrivateDownload(),token);
         String hash = calculateHash(fileData);
         String workspaceName = orgSaaSObject.getConfig().getSaasname();
         // 채널 및 사용자 정보 가져오기
@@ -83,7 +83,7 @@ public class FileUtil {
         String uploadedChannelPath = String.format("%s/%s/%s/%s/%s",orgName, saasName, workspaceName, channelName, uploadedUserName);
 
         // S3에 저장될 키 생성
-        String s3Key = String.format("%s/%s/%s/%s/%s",orgName, saasName, workspaceName, channelName, file.getName());
+        String s3Key = String.format("%s/%s/%s/%s/%s/%s",orgName, saasName, workspaceName, channelName, hash, file.getName());
 
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
 
@@ -101,9 +101,14 @@ public class FileUtil {
         }
     }
 
-    private byte[] downloadFile(String fileUrl) throws IOException {
+    private byte[] downloadFile(String fileUrl, String token) throws IOException {
         try {
-            ResponseEntity<byte[]> response = restTemplate.getForEntity(fileUrl, byte[].class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + token);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<byte[]> response = restTemplate.exchange(fileUrl, HttpMethod.GET, entity, byte[].class);
+
             if (response.getStatusCode() == HttpStatus.OK) {
                 return response.getBody();
             } else {
@@ -115,14 +120,17 @@ public class FileUtil {
         }
     }
 
-    private String calculateHash(byte[] fileData) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    public static String calculateHash(byte[] fileData) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance(HASH_ALGORITHM);
         byte[] hash = digest.digest(fileData);
-        StringBuilder hexString = new StringBuilder();
-        for (byte b : hash) {
+        return bytesToHex(hash);
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder(2 * bytes.length);
+        for (byte b : bytes) {
             String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1) hexString.append('0');
-            hexString.append(hex);
+            hexString.append(hex.length() == 1 ? "0" : "").append(hex);
         }
         return hexString.toString();
     }

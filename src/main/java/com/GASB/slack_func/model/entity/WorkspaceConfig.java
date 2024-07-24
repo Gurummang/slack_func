@@ -35,8 +35,8 @@ public class WorkspaceConfig {
     @Column(name = "alias")
     private String alias;
 
-    @Column(name = "validation", nullable = false)
-    private boolean validation;
+//    @Column(name = "validation", nullable = false)
+//    private boolean validation;
 
     @OneToMany(mappedBy = "config", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrgSaaS> orgSaaSList;
