@@ -1,10 +1,12 @@
 package com.GASB.slack_func.controller;
 
+import com.GASB.slack_func.configuration.ExtractData;
 import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
 import com.GASB.slack_func.model.entity.OrgSaaS;
 import com.GASB.slack_func.model.entity.Saas;
+import com.GASB.slack_func.repository.org.AdminRepo;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.org.SaasRepo;
 import com.GASB.slack_func.service.file.SlackFileService;
@@ -13,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,11 +31,14 @@ public class SlackBoardController {
     private final SlackFileService slackFileService;
     private final OrgSaaSRepo  orgSaaSRepo;
     private final SaasRepo saasRepo;
+    private final AdminRepo adminRepo;
 
     @PostMapping("/files/size")
-    public ResponseEntity<SlackFileSizeDto> fetchFileSize(){
+    public ResponseEntity<SlackFileSizeDto> fetchFileSize(@RequestBody ExtractData request){
         try{
-            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(1,saasRepo.findById(1).orElse(null));
+            String email = request.getEmail();
+            int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
+            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(orgId,saasRepo.findBySaasName("Slack").orElse(null));
             log.info("orgSaaSList: {}", orgSaaSList);
             SlackFileSizeDto slackFileSizeDto = slackFileService.SumOfSlackFileSize(orgSaaSList);
             return ResponseEntity.ok(slackFileSizeDto);
@@ -44,11 +50,13 @@ public class SlackBoardController {
     }
 
     @PostMapping("/files/count")
-    public ResponseEntity<SlackFileCountDto> fetchFileCount(){
+    public ResponseEntity<SlackFileCountDto> fetchFileCount(@RequestBody ExtractData request){
 
         try{
-            Saas saasObject = saasRepo.findById(1).orElse(null);
-            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(1,saasObject);
+            String email = request.getEmail();
+            int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
+            Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
+            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(orgId,saasObject);
             SlackFileCountDto slackFileCountDto = slackFileService.SumOfSlackFileCount(orgSaaSList);
             return ResponseEntity.ok(slackFileCountDto);
         } catch (Exception e) {
@@ -57,11 +65,13 @@ public class SlackBoardController {
                     .body(new SlackFileCountDto(0,0,0,0));
         }
     }
-
     @PostMapping("/files/recent")
-    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles(){
+    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles(@RequestBody ExtractData request){
         try {
-            List<SlackRecentFileDTO> recentFiles = slackFileService.slackRecentFiles();
+            String email = request.getEmail();
+            int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
+            Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
+            List<SlackRecentFileDTO> recentFiles = slackFileService.slackRecentFiles(orgId, saasObject);
             return ResponseEntity.ok(recentFiles);
         } catch (Exception e) {
             log.error("Error fetching recent files", e);
