@@ -16,8 +16,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -58,7 +57,8 @@ public class FileUtil {
 
     @Transactional
     public void processAndStoreFile(File file,OrgSaaS orgSaaSObject ) throws IOException, NoSuchAlgorithmException {
-        byte[] fileData = downloadFile(file.getUrlPrivateDownload());
+        String token = TokenSelector(orgSaaSObject);
+        byte[] fileData = downloadFile(file.getUrlPrivateDownload(),token);
         String hash = calculateHash(fileData);
         String workspaceName = orgSaaSObject.getConfig().getSaasname();
         // 채널 및 사용자 정보 가져오기
@@ -101,9 +101,14 @@ public class FileUtil {
         }
     }
 
-    private byte[] downloadFile(String fileUrl) throws IOException {
+    private byte[] downloadFile(String fileUrl, String token) throws IOException {
         try {
-            ResponseEntity<byte[]> response = restTemplate.getForEntity(fileUrl, byte[].class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + token);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<byte[]> response = restTemplate.exchange(fileUrl, HttpMethod.GET, entity, byte[].class);
+
             if (response.getStatusCode() == HttpStatus.OK) {
                 return response.getBody();
             } else {
