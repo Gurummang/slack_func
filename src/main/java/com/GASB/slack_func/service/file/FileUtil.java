@@ -53,7 +53,7 @@ public class FileUtil {
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
-
+    private static final String HASH_ALGORITHM = "SHA-256";
     private final S3Client s3Client;
 
     @Transactional
@@ -83,7 +83,7 @@ public class FileUtil {
         String uploadedChannelPath = String.format("%s/%s/%s/%s/%s",orgName, saasName, workspaceName, channelName, uploadedUserName);
 
         // S3에 저장될 키 생성
-        String s3Key = String.format("%s/%s/%s/%s/%s",orgName, saasName, workspaceName, channelName, file.getName());
+        String s3Key = String.format("%s/%s/%s/%s/%s/%s",orgName, saasName, workspaceName, channelName, hash, file.getName());
 
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
 
@@ -115,14 +115,17 @@ public class FileUtil {
         }
     }
 
-    private String calculateHash(byte[] fileData) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    public static String calculateHash(byte[] fileData) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance(HASH_ALGORITHM);
         byte[] hash = digest.digest(fileData);
-        StringBuilder hexString = new StringBuilder();
-        for (byte b : hash) {
+        return bytesToHex(hash);
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder(2 * bytes.length);
+        for (byte b : bytes) {
             String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1) hexString.append('0');
-            hexString.append(hex);
+            hexString.append(hex.length() == 1 ? "0" : "").append(hex);
         }
         return hexString.toString();
     }
