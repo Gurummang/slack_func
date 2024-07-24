@@ -1,7 +1,6 @@
 package com.GASB.slack_func.controller;
 
-import com.GASB.slack_func.configuration.ExtractSpaceId;
-import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
+import com.GASB.slack_func.configuration.ExtractData;
 import com.GASB.slack_func.model.dto.file.SlackTotalFileDataDto;
 import com.GASB.slack_func.repository.org.AdminRepo;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,26 +24,14 @@ import java.util.List;
 public class SlackFileController {
     private final SlackFileService slackFileService;
     private static final Logger logger = LoggerFactory.getLogger(SlackFileController.class);
-    private final ExtractSpaceId extractSpaceId;
+    private final ExtractData extractData;
     private final OrgSaaSRepo orgSaaSRepo;
     private final AdminRepo adminRepo;
-
-    @PostMapping("/recent")
-    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles(){
-        try {
-            List<SlackRecentFileDTO> recentFiles = slackFileService.slackRecentFiles();
-            return ResponseEntity.ok(recentFiles);
-        } catch (Exception e) {
-            logger.error("Error fetching recent files", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonList(new SlackRecentFileDTO("Error", "Server Error", "N/A", LocalDateTime.now())));
-        }
-    }
 
     // 여기서는 space ID가 아니라 클라이언트 인증정보를 알려줘야함
     // 그래야 orgId에 따른 orgSaaS를 찾아서 그에 맞는 파일을 가져올 수 있음
     @PostMapping("/total")
-    public ResponseEntity<SlackTotalFileDataDto> fetchTotalFilesData(@RequestBody ExtractSpaceId request) {
+    public ResponseEntity<SlackTotalFileDataDto> fetchTotalFilesData(@RequestBody ExtractData request) {
 //        AdminUsers adminUsers = adminRepo.findByEmail(request.getEmail()).orElse(null);
 //        OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgId(adminUsers.getOrg().getId().intValue()).orElse(null);
         try {

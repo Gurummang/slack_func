@@ -12,6 +12,7 @@ public interface OrgSaaSRepo extends JpaRepository<OrgSaaS, Integer> {
 
     Optional<OrgSaaS> findById(Long id);
     Optional<OrgSaaS> findBySpaceId(String spaceId);
+    Optional<OrgSaaS> findByOrgIdAndSpaceId(int orgId, String spaceId);
     Optional<OrgSaaS> findByOrgIdAndSaas(int orgId, Saas saas);
     List<OrgSaaS> findAllByOrgIdAndSaas(int orgId, Saas saas);
     Optional<OrgSaaS> findBySpaceIdAndOrgId(String spaceId, int orgId);

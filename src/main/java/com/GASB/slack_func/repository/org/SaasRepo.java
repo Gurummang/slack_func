@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface SaasRepo extends JpaRepository<Saas,Long> {
     Optional<Saas> findById(int saas_id);
+    Optional<Saas> findBySaasName(String saasName);
+
 }

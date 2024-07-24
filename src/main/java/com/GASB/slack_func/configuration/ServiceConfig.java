@@ -46,7 +46,7 @@ public class ServiceConfig {
     }
 
     @Bean
-    public ExtractSpaceId reqeustToJson() {
-        return new ExtractSpaceId();
+    public ExtractData reqeustToJson() {
+        return new ExtractData();
     }
 }

@@ -1,17 +1,15 @@
 package com.GASB.slack_func.service;
 
 import com.GASB.slack_func.model.entity.OrgSaaS;
+import com.GASB.slack_func.service.file.FileUtil;
 import com.slack.api.Slack;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.methods.response.conversations.ConversationsListResponse;
 import com.slack.api.methods.response.files.FilesListResponse;
-import com.slack.api.methods.response.team.TeamInfoResponse;
 import com.slack.api.methods.response.users.UsersListResponse;
 import com.slack.api.model.Conversation;
 import com.slack.api.model.File;
-import com.slack.api.model.Team;
 import com.slack.api.model.User;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -20,15 +18,17 @@ import java.util.List;
 @Service
 public class SlackApiService {
 
-    private final String token;
     private final Slack slack;
-    public SlackApiService(@Value("${slack.token}") String token) {
-        this.token = token;
-        this.slack = Slack.getInstance();
-    }
+    private final FileUtil fileUtil;
+    private String token;
 
+    public SlackApiService(FileUtil fileUtil) {
+        this.slack = Slack.getInstance();
+        this.fileUtil = fileUtil;
+    }
     // ConversationsList API호출 메서드
     public List<Conversation> fetchConversations(OrgSaaS orgSaaS) throws IOException, SlackApiException {
+        token = fileUtil.TokenSelector(orgSaaS);
         ConversationsListResponse conversationsResponse = slack.methods(token).conversationsList(r -> r);
         if (conversationsResponse.isOk()) {
             return conversationsResponse.getChannels();
@@ -38,7 +38,8 @@ public class SlackApiService {
     }
 
     // users.list API호출 메서드
-    public List<User> fetchUsers() throws IOException, SlackApiException {
+    public List<User> fetchUsers(OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
+        token = fileUtil.TokenSelector(orgSaaSObject);
         UsersListResponse usersListResponse = slack.methods(token).usersList(r -> r);
         if (usersListResponse.isOk()) {
             return usersListResponse.getMembers();
@@ -47,7 +48,8 @@ public class SlackApiService {
         }
     }
     // files.list API호출 메서드
-    public List<File> fetchFiles() throws IOException, SlackApiException {
+    public List<File> fetchFiles(OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
+        token = fileUtil.TokenSelector(orgSaaSObject);
         FilesListResponse filesListResponse = slack.methods(token).filesList(r -> r);
         if (filesListResponse.isOk()) {
             return filesListResponse.getFiles();
@@ -56,18 +58,9 @@ public class SlackApiService {
         }
     }
 
-    // team.info API호출 메서드
-    public Team fetchTeamInfo() throws IOException, SlackApiException {
-        TeamInfoResponse teamInfoResponse = slack.methods(token).teamInfo(r -> r);
-        if (teamInfoResponse.isOk()) {
-            return teamInfoResponse.getTeam();
-        } else {
-            throw new RuntimeException("Error fetching users: " + teamInfoResponse.getError());
-        }
-    }
-
     // files.info API호출 메서드
-    public File fetchFileInfo(String fileId) throws IOException, SlackApiException {
+    public File fetchFileInfo(String fileId, OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
+        token = fileUtil.TokenSelector(orgSaaSObject);
         com.slack.api.methods.response.files.FilesInfoResponse filesInfoResponse = slack.methods(token).filesInfo(r -> r.file(fileId));
         if (filesInfoResponse.isOk()) {
             return filesInfoResponse.getFile();
@@ -77,7 +70,8 @@ public class SlackApiService {
     }
 
     // conversations.info API호출 메서드
-    public Conversation fetchConversationInfo(String channelId) throws IOException, SlackApiException {
+    public Conversation fetchConversationInfo(String channelId, OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
+        token = fileUtil.TokenSelector(orgSaaSObject);
         com.slack.api.methods.response.conversations.ConversationsInfoResponse conversationsInfoResponse = slack.methods(token).conversationsInfo(r -> r.channel(channelId));
         if (conversationsInfoResponse.isOk()) {
             return conversationsInfoResponse.getChannel();
@@ -87,7 +81,8 @@ public class SlackApiService {
     }
 
     // users.info API호출 메서드
-    public User fetchUserInfo(String userId) throws IOException, SlackApiException {
+    public User fetchUserInfo(String userId, OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
+        token = fileUtil.TokenSelector(orgSaaSObject);
         com.slack.api.methods.response.users.UsersInfoResponse usersInfoResponse = slack.methods(token).usersInfo(r -> r.user(userId));
         if (usersInfoResponse.isOk()) {
             return usersInfoResponse.getUser();

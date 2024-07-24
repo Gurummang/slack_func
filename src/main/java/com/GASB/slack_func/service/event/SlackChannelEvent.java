@@ -27,7 +27,7 @@ public class SlackChannelEvent {
         try {
             OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(payload.get("teamId").toString()).get();
             String token = fileUtil.TokenSelector(orgSaaSObject);
-            Conversation new_conversation = slackApiService.fetchConversationInfo(payload.get("channelId").toString());
+            Conversation new_conversation = slackApiService.fetchConversationInfo(payload.get("channelId").toString(),orgSaaSObject);
             slackChannelService.addChannel(new_conversation,orgSaaSObject);
             log.info("Channel event processed successfully");
         } catch (Exception e) {

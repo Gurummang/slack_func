@@ -22,11 +22,11 @@ public class SlackUserService {
     private final SlackUserMapper slackUserMapper;
     private final SlackUserRepo slackUserRepo;
     private final OrgSaaSRepo orgSaaSRepo;
-    public void slackFirstUsers(String spaceId) {
+    public void slackFirstUsers(String spaceId,int orgId) {
         try {
             log.info("SpaceId : {}" ,spaceId);
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(spaceId).get();
-            List<User> slackUsers = slackApiService.fetchUsers();
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSpaceId(orgId,spaceId).get();
+            List<User> slackUsers = slackApiService.fetchUsers(orgSaaSObject);
             int orgSaaSId =orgSaaSObject.getId().intValue(); // 예시로 고정값 사용, 실제로는 orgSaaSService를 통해 가져올 수 있습니다.
             log.info("orgSaaSId: {}", orgSaaSId);
             List<MonitoredUsers> monitoredUsers = slackUserMapper.toEntity(slackUsers, orgSaaSId);

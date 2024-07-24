@@ -30,13 +30,11 @@ public class SlackFileEvent {
 
             OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(teamId).orElse(null);
 
-            String slackSpaceName = orgSaaSRepo.findBySpaceId(teamId)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid team ID: " + teamId))
-                    .getConfig().getSaasname();
+//            String slackSpaceName = orgSaaSRepo.findBySpaceId(teamId)
+//                    .orElseThrow(() -> new IllegalArgumentException("Invalid team ID: " + teamId))
+//                    .getConfig().getSaasname();
 
-
-
-            File fileInfo = slackApiService.fetchFileInfo(fileId);
+            File fileInfo = slackApiService.fetchFileInfo(fileId, orgSaaSObject);
             fileService.processAndStoreFile(fileInfo, orgSaaSObject);
 
             log.info("File event processed successfully for file ID: {}", fileInfo.getId());
