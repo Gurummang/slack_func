@@ -46,6 +46,12 @@ dependencies {
 	implementation platform('software.amazon.awssdk:bom:2.21.1')
 	implementation 'software.amazon.awssdk:s3'
 
+	//rabbitMQ
+	implementation 'org.springframework.boot:spring-boot-starter-amqp'
+	implementation 'com.rabbitmq:amqp-client'
+
+	//validation
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
 }
 

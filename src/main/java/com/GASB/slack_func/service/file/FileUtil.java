@@ -15,6 +15,7 @@ import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
@@ -54,6 +55,7 @@ public class FileUtil {
     private final VtReportRepository vtReportRepository;
     private final FileStatusRepository fileStatusRepository;
     private final S3Client s3Client;
+    private final RabbitTemplate rabbitTemplate;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -150,6 +152,7 @@ public class FileUtil {
             if (isFileNotStored(storedFile)) {
                 try {
                     storedFilesRepository.save(storedFile);
+//                    sendMessage(storedFile.getId());
                     log.info("File uploaded successfully: {}", file.getName());
                 } catch (DataIntegrityViolationException e) {
                     log.warn("Duplicate entry detected and ignored: {}", file.getName());
@@ -170,7 +173,7 @@ public class FileUtil {
     private boolean fileUploadDuplicate(fileUpload fileUploadObject) {
         String fild_id = fileUploadObject.getSaasFileId();
         LocalDateTime event_ts = fileUploadObject.getTimestamp();
-        return fileUploadRepository.findBySaasFileIdAndTimestamp(fileUploadObject.getSaasFileId(), fileUploadObject.getTimestamp()).isEmpty();
+        return fileUploadRepository.findBySaasFileIdAndTimestamp(fild_id, event_ts).isEmpty();
     }
 
     private boolean activityDuplicate(Activities activity) {
@@ -252,11 +255,6 @@ public class FileUtil {
         }
         return saasOptional.get();
     }
-
-//    private boolean isFileNotStored(StoredFile storedFile, fileUpload fileUploadObject) {
-//        return storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty()
-//                && fileUploadRepository.findBySaasFileId(fileUploadObject.getSaasFileId()).isEmpty();
-//    }
 
 
     private static String sanitizePathSegment(String segment) {
@@ -350,5 +348,10 @@ public class FileUtil {
 
     public int countConnectedAccounts(OrgSaaS orgSaaSObject) {
         return slackUserRepo.findByOrgSaaS(orgSaaSObject).size();
+    }
+
+    public void sendMessage(Long message) {
+        rabbitTemplate.convertAndSend(message);
+        System.out.println("Sent message: " + message);
     }
 }
