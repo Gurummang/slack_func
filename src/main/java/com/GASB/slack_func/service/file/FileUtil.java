@@ -16,7 +16,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -29,8 +31,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,56 +53,38 @@ public class FileUtil {
     private final DlpRepo dlpRepo;
     private final VtReportRepository vtReportRepository;
     private final FileStatusRepository fileStatusRepository;
+    private final S3Client s3Client;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
     private static final String HASH_ALGORITHM = "SHA-256";
-    private final S3Client s3Client;
 
+    @Async("threadPoolTaskExecutor")
     @Transactional
-    public void processAndStoreFile(File file,OrgSaaS orgSaaSObject ) throws IOException, NoSuchAlgorithmException {
-        String token = TokenSelector(orgSaaSObject);
-        byte[] fileData = downloadFile(file.getUrlPrivateDownload(),token);
-        String hash = calculateHash(fileData);
-        String workspaceName = orgSaaSObject.getConfig().getSaasname();
-        // 채널 및 사용자 정보 가져오기
-        String channelId = getFirstChannelId(file);
-        String userId = file.getUser();
+    public CompletableFuture<Void> processAndStoreFile(File file, OrgSaaS orgSaaSObject) {
+        return downloadFileAsync(file.getUrlPrivateDownload(), TokenSelector(orgSaaSObject))
+                .thenApply(fileData -> {
+                    try {
+                        return handleFileProcessing(file, orgSaaSObject, fileData);
+                    } catch (IOException | NoSuchAlgorithmException e) {
+                        throw new RuntimeException("File processing failed", e);
+                    }
+                })
+                .exceptionally(ex -> {
+                    log.error("Error processing file: {}", file.getName(), ex);
+                    return null;
+                });
+    }
 
-        String channelName = fetchChannelName(channelId);
-        String uploadedUserName = fetchUserName(userId);
-
-        MonitoredUsers user = fetchUserById(userId);
-        if (user == null) return;
-
-//        OrgSaaS saas = fetchOrgSaaSByUser(user);
-//        if (saas == null) return;
-
-        String saasName = orgSaaSObject.getSaas().getSaasName();
-        String orgName = orgSaaSObject.getOrg().getOrgName();
-        // 파일을 로컬에 저장하고 경로를 얻음
-        String filePath = saveFileToLocal(fileData, saasName, workspaceName, channelName, file.getName());
-
-        // 업로드된 경로 생성
-        String uploadedChannelPath = String.format("%s/%s/%s/%s/%s",orgName, saasName, workspaceName, channelName, uploadedUserName);
-
-        // S3에 저장될 키 생성
-        String s3Key = String.format("%s/%s/%s/%s/%s/%s",orgName, saasName, workspaceName, channelName, hash, file.getName());
-
-        StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
-
-        fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash); //file이 timestamp가 안된대요
-        Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user);
-        activity.setUploadChannel(uploadedChannelPath);
-
-        uploadFileToS3(filePath, s3Key);
-
-        if (isFileNotStored(storedFile, fileUploadObject)) {
-            storedFilesRepository.save(storedFile);
-            fileUploadRepository.save(fileUploadObject);
-            activitiesRepository.save(activity);
-            log.info("File uploaded successfully: {}", file.getName());
-        }
+    @Async("threadPoolTaskExecutor")
+    public CompletableFuture<byte[]> downloadFileAsync(String fileUrl, String token) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return downloadFile(fileUrl, token);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private byte[] downloadFile(String fileUrl, String token) throws IOException {
@@ -120,6 +106,79 @@ public class FileUtil {
         }
     }
 
+    private Void handleFileProcessing(File file, OrgSaaS orgSaaSObject, byte[] fileData) throws IOException, NoSuchAlgorithmException {
+        String hash = calculateHash(fileData);
+        String workspaceName = orgSaaSObject.getConfig().getSaasname();
+
+        // 채널 및 사용자 정보 가져오기
+        String channelId = getFirstChannelId(file);
+        String userId = file.getUser();
+
+        String channelName = fetchChannelName(channelId);
+        String uploadedUserName = fetchUserName(userId);
+
+        MonitoredUsers user = fetchUserById(userId);
+        if (user == null) return null;
+
+        String saasName = orgSaaSObject.getSaas().getSaasName();
+        String orgName = orgSaaSObject.getOrg().getOrgName();
+        String filePath = saveFileToLocal(fileData, saasName, workspaceName, channelName, hash, file.getTitle());
+
+        // 저장 경로 설정
+        String uploadedChannelPath = String.format("%s/%s/%s/%s/%s", orgName, saasName, workspaceName, channelName, uploadedUserName);
+        String s3Key = String.format("%s/%s/%s/%s/%s/%s", orgName, saasName, workspaceName, channelName, hash, file.getTitle());
+
+        StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
+        fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash);
+        Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user);
+        activity.setUploadChannel(uploadedChannelPath);
+
+        synchronized (this) {
+            // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
+            if (activityDuplicate(activity)) {
+                activitiesRepository.save(activity);
+            } else {
+                log.warn("Duplicate activity detected and ignored: {}", file.getName());
+            }
+
+            if (fileUploadDuplicate(fileUploadObject)) {
+                fileUploadRepository.save(fileUploadObject);
+            } else {
+                log.warn("Duplicate file upload detected and ignored: {}", file.getName());
+            }
+
+            if (isFileNotStored(storedFile)) {
+                try {
+                    storedFilesRepository.save(storedFile);
+                    log.info("File uploaded successfully: {}", file.getName());
+                } catch (DataIntegrityViolationException e) {
+                    log.warn("Duplicate entry detected and ignored: {}", file.getName());
+                }
+            } else {
+                log.warn("Duplicate file detected: {}", file.getName());
+            }
+        }
+        uploadFileToS3(filePath, s3Key);
+
+        return null;
+    }
+
+    private boolean isFileNotStored(StoredFile storedFile) {
+        return storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty();
+    }
+
+    private boolean fileUploadDuplicate(fileUpload fileUploadObject) {
+        String fild_id = fileUploadObject.getSaasFileId();
+        LocalDateTime event_ts = fileUploadObject.getTimestamp();
+        return fileUploadRepository.findBySaasFileIdAndTimestamp(fileUploadObject.getSaasFileId(), fileUploadObject.getTimestamp()).isEmpty();
+    }
+
+    private boolean activityDuplicate(Activities activity) {
+        String fild_id = activity.getSaasFileId();
+        LocalDateTime event_ts = activity.getEventTs();
+        return activitiesRepository.findBySaasFileIdAndEventTs(fild_id, event_ts).isEmpty();
+    }
+
     public static String calculateHash(byte[] fileData) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance(HASH_ALGORITHM);
         byte[] hash = digest.digest(fileData);
@@ -135,14 +194,14 @@ public class FileUtil {
         return hexString.toString();
     }
 
-    private String saveFileToLocal(byte[] fileData, String saasName, String workspaceName, String channelName, String fileName) throws IOException {
+    private String saveFileToLocal(byte[] fileData, String saasName, String workspaceName, String channelName, String hash, String fileName) throws IOException {
         saasName = sanitizePathSegment(saasName);
         workspaceName = sanitizePathSegment(workspaceName);
-        channelName = sanitizePathSegment(channelName);
+//        channelName = sanitizePathSegment(channelName);
         fileName = sanitizeFileName(fileName);
 
         Path basePath = Paths.get("downloaded_files");
-        Path filePath = basePath.resolve(Paths.get(saasName, workspaceName, channelName, fileName));
+        Path filePath = basePath.resolve(Paths.get(saasName, workspaceName, channelName, hash, fileName));
 
         Files.createDirectories(filePath.getParent());
         Files.write(filePath, fileData);
@@ -194,16 +253,17 @@ public class FileUtil {
         return saasOptional.get();
     }
 
-    private boolean isFileNotStored(StoredFile storedFile, fileUpload fileUploadObject) {
-        return storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty()
-                && fileUploadRepository.findBySaasFileId(fileUploadObject.getSaasFileId()).isEmpty();
-    }
+//    private boolean isFileNotStored(StoredFile storedFile, fileUpload fileUploadObject) {
+//        return storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty()
+//                && fileUploadRepository.findBySaasFileId(fileUploadObject.getSaasFileId()).isEmpty();
+//    }
 
-    private String sanitizePathSegment(String segment) {
+
+    private static String sanitizePathSegment(String segment) {
         return segment.replaceAll("[^a-zA-Z0-9-_]", "_");
     }
 
-    private String sanitizeFileName(String fileName) {
+    private static String sanitizeFileName(String fileName) {
         return fileName.replaceAll("[^a-zA-Z0-9-_.]", "_");
     }
 
@@ -211,10 +271,8 @@ public class FileUtil {
         return file.getChannels().isEmpty() ? null : file.getChannels().get(0);
     }
 
-
     public String TokenSelector(OrgSaaS orgSaaSObject) {
-        String used_token = orgSaaSObject.getConfig().getToken();
-        return used_token;
+        return orgSaaSObject.getConfig().getToken();
     }
 
     protected int calculateTotalFileSize(List<fileUpload> targetFileList) {
@@ -228,12 +286,12 @@ public class FileUtil {
                 .sum();
     }
 
-    public int CalcSlackSensitiveSize(List<fileUpload> TargetFileList){
+    public int CalcSlackSensitiveSize(List<fileUpload> TargetFileList) {
         return getSensitiveFileList(TargetFileList).stream()
                 .mapToInt(StoredFile::getSize).sum();
     }
 
-    public int CalcSlackMaliciousSize(List<fileUpload> TargetFileList){
+    public int CalcSlackMaliciousSize(List<fileUpload> TargetFileList) {
         return getMaliciousFileList(TargetFileList).stream()
                 .mapToInt(StoredFile::getSize).sum();
     }
@@ -259,9 +317,6 @@ public class FileUtil {
                         .orElse(false))
                 .collect(Collectors.toList());
     }
-
-
-
 
     public int countSensitiveFiles(List<fileUpload> targetFileList) {
         return (int) targetFileList.stream()

@@ -13,14 +13,12 @@ import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.GASB.slack_func.service.SlackApiService;
-import com.slack.api.methods.SlackApiException;
 import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -46,7 +44,7 @@ public class SlackFileService {
     public void fetchAndStoreFiles(String spaceId, int orgId) {
         try {
             OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSpaceId(orgId, spaceId).get();
-            List<File> fileList = fetchFileList(orgSaaSObject);
+            List<File> fileList = slackApiService.fetchFiles(orgSaaSObject);
 
 
 //            String spaceName = orgSaaS.getConfig().getSaasname();
@@ -57,10 +55,6 @@ public class SlackFileService {
         } catch (Exception e) {
             log.error("Error processing files", e);
         }
-    }
-
-    protected List<File> fetchFileList(OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
-        return slackApiService.fetchFiles(orgSaaSObject);
     }
 
     public List<SlackRecentFileDTO> slackRecentFiles(int org_id, Saas saas) {
@@ -90,7 +84,7 @@ public class SlackFileService {
                             .fileName(activity.getFileName())
                             .uploadedBy(uploadedBy)
                             .fileType(storedFile.getType())
-                            .uploadTimestamp(upload.getTimestamp().toLocalDateTime())
+                            .uploadTimestamp(upload.getTimestamp())
                             .build();
                 }
 
@@ -115,7 +109,7 @@ public class SlackFileService {
         List<SlackTotalFileDataDto.FileDetail> fileDetails = fileUploads.stream().map(fileUpload -> {
             SlackTotalFileDataDto.FileDetail.FileDetailBuilder detailBuilder = SlackTotalFileDataDto.FileDetail.builder()
                     .fileId(fileUpload.getSaasFileId())
-                    .timestamp(fileUpload.getTimestamp().toLocalDateTime());
+                    .timestamp(fileUpload.getTimestamp());
 
             Activities activity = activitiesRepository.findBysaasFileId(fileUpload.getSaasFileId()).orElse(null);
             if (activity != null) {

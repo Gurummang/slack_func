@@ -1,9 +1,12 @@
 package com.GASB.slack_func.model.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -27,5 +30,5 @@ public class fileUpload {
     private String hash;
 
     @Column(name = "upload_ts", nullable = false)
-    private Timestamp timestamp;
+    private LocalDateTime timestamp;
 }

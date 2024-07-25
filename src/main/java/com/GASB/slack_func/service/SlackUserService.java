@@ -8,10 +8,12 @@ import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.slack.api.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
@@ -22,31 +24,37 @@ public class SlackUserService {
     private final SlackUserMapper slackUserMapper;
     private final SlackUserRepo slackUserRepo;
     private final OrgSaaSRepo orgSaaSRepo;
-    public void slackFirstUsers(String spaceId,int orgId) {
-        try {
-            log.info("SpaceId : {}" ,spaceId);
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSpaceId(orgId,spaceId).get();
-            List<User> slackUsers = slackApiService.fetchUsers(orgSaaSObject);
-            int orgSaaSId =orgSaaSObject.getId().intValue(); // 예시로 고정값 사용, 실제로는 orgSaaSService를 통해 가져올 수 있습니다.
-            log.info("orgSaaSId: {}", orgSaaSId);
-            List<MonitoredUsers> monitoredUsers = slackUserMapper.toEntity(slackUsers, orgSaaSId);
 
-            // 중복된 user_id를 제외하고 저장할 사용자 목록 생성
-            List<MonitoredUsers> filteredUsers = monitoredUsers.stream()
-                    .filter(user -> !slackUserRepo.existsByUserId(user.getUserId()))
-                    .collect(Collectors.toList());
+    @Async("threadPoolTaskExecutor")
+    public CompletableFuture<Void> slackFirstUsers(String spaceId, int orgId) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                log.info("SpaceId : {}", spaceId);
+                OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSpaceId(orgId, spaceId).orElseThrow(() -> new RuntimeException("OrgSaaS not found"));
+                List<User> slackUsers = slackApiService.fetchUsers(orgSaaSObject);
+                int orgSaaSId = orgSaaSObject.getId().intValue(); // 예시로 고정값 사용, 실제로는 orgSaaSService를 통해 가져올 수 있습니다.
+                log.info("orgSaaSId: {}", orgSaaSId);
+                List<MonitoredUsers> monitoredUsers = slackUserMapper.toEntity(slackUsers, orgSaaSId);
 
-            slackUserRepo.saveAll(filteredUsers);
-        } catch (Exception e) {
-            log.error("Error fetching users", e);
-        }
+                // 중복된 user_id를 제외하고 저장할 사용자 목록 생성
+                List<MonitoredUsers> filteredUsers = monitoredUsers.stream()
+                        .filter(user -> !slackUserRepo.existsByUserId(user.getUserId()))
+                        .collect(Collectors.toList());
+
+                slackUserRepo.saveAll(filteredUsers);
+            } catch (Exception e) {
+                log.error("Error fetching users", e);
+            }
+        });
     }
 
-
-    public void addUser(User user) {
-        MonitoredUsers monitoredUser = slackUserMapper.toEntity(user,1);
-        if (!slackUserRepo.existsByUserId(monitoredUser.getUserId())) {
-            slackUserRepo.save(monitoredUser);
-        }
+    @Async("threadPoolTaskExecutor")
+    public CompletableFuture<Void> addUser(User user) {
+        return CompletableFuture.runAsync(() -> {
+            MonitoredUsers monitoredUser = slackUserMapper.toEntity(user, 1);
+            if (!slackUserRepo.existsByUserId(monitoredUser.getUserId())) {
+                slackUserRepo.save(monitoredUser);
+            }
+        });
     }
 }
