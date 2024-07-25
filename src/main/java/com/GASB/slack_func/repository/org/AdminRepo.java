@@ -12,4 +12,7 @@ public interface AdminRepo extends JpaRepository<AdminUsers, Integer> {
     Optional<AdminUsers> findByEmailAndPassword(String email, String password);
     Optional<AdminUsers> findByEmailAndOrgId(String email, int orgId);
 
+    boolean existsByEmail(String email);
+
+
 }
