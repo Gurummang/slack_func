@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -48,7 +47,7 @@ public class SlackFileMapper {
                 .orgSaaS(orgSaas)
                 .saasFileId(file.getId())
                 .hash(hash)
-                .timestamp(new Timestamp(file.getTimestamp()))
+                .timestamp(LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.systemDefault()))
                 .build();
     }
 
@@ -61,7 +60,7 @@ public class SlackFileMapper {
                 .user(user)
                 .eventType(eventType)
                 .saasFileId(file.getId())
-                .fileName(file.getName())
+                .fileName(file.getTitle())
                 .eventTs(LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.systemDefault()))
                 .uploadChannel(file.getChannels().isEmpty() ? null : file.getChannels().get(0))
                 .build();
