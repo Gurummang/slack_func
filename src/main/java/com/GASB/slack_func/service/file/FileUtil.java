@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -121,9 +122,9 @@ public class FileUtil {
 
         String saasName = orgSaaSObject.getSaas().getSaasName();
         String orgName = orgSaaSObject.getOrg().getOrgName();
-        String filePath = saveFileToLocal(fileData, saasName, workspaceName, channelName, file.getName());
+        String filePath = saveFileToLocal(fileData, saasName, workspaceName, channelName, hash, file.getTitle());
 
-        //저장 경로 설정
+        // 저장 경로 설정
         String uploadedChannelPath = String.format("%s/%s/%s/%s/%s", orgName, saasName, workspaceName, channelName, uploadedUserName);
         String s3Key = String.format("%s/%s/%s/%s/%s/%s", orgName, saasName, workspaceName, channelName, hash, file.getTitle());
 
@@ -132,15 +133,23 @@ public class FileUtil {
         Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user);
         activity.setUploadChannel(uploadedChannelPath);
 
-        // 활동 및 파일 업로드 정보 저장
-        activitiesRepository.save(activity);
-        fileUploadRepository.save(fileUploadObject);
-
         synchronized (this) {
+            // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
+            if (activityDuplicate(activity)) {
+                activitiesRepository.save(activity);
+            } else {
+                log.warn("Duplicate activity detected and ignored: {}", file.getName());
+            }
+
+            if (fileUploadDuplicate(fileUploadObject)) {
+                fileUploadRepository.save(fileUploadObject);
+            } else {
+                log.warn("Duplicate file upload detected and ignored: {}", file.getName());
+            }
+
             if (isFileNotStored(storedFile)) {
                 try {
                     storedFilesRepository.save(storedFile);
-                    uploadFileToS3(filePath, s3Key);
                     log.info("File uploaded successfully: {}", file.getName());
                 } catch (DataIntegrityViolationException e) {
                     log.warn("Duplicate entry detected and ignored: {}", file.getName());
@@ -149,8 +158,25 @@ public class FileUtil {
                 log.warn("Duplicate file detected: {}", file.getName());
             }
         }
+        uploadFileToS3(filePath, s3Key);
 
         return null;
+    }
+
+    private boolean isFileNotStored(StoredFile storedFile) {
+        return storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty();
+    }
+
+    private boolean fileUploadDuplicate(fileUpload fileUploadObject) {
+        String fild_id = fileUploadObject.getSaasFileId();
+        LocalDateTime event_ts = fileUploadObject.getTimestamp();
+        return fileUploadRepository.findBySaasFileIdAndTimestamp(fileUploadObject.getSaasFileId(), fileUploadObject.getTimestamp()).isEmpty();
+    }
+
+    private boolean activityDuplicate(Activities activity) {
+        String fild_id = activity.getSaasFileId();
+        LocalDateTime event_ts = activity.getEventTs();
+        return activitiesRepository.findBySaasFileIdAndEventTs(fild_id, event_ts).isEmpty();
     }
 
     public static String calculateHash(byte[] fileData) throws NoSuchAlgorithmException {
@@ -168,14 +194,14 @@ public class FileUtil {
         return hexString.toString();
     }
 
-    private String saveFileToLocal(byte[] fileData, String saasName, String workspaceName, String channelName, String fileName) throws IOException {
+    private String saveFileToLocal(byte[] fileData, String saasName, String workspaceName, String channelName, String hash, String fileName) throws IOException {
         saasName = sanitizePathSegment(saasName);
         workspaceName = sanitizePathSegment(workspaceName);
-        channelName = sanitizePathSegment(channelName);
+//        channelName = sanitizePathSegment(channelName);
         fileName = sanitizeFileName(fileName);
 
         Path basePath = Paths.get("downloaded_files");
-        Path filePath = basePath.resolve(Paths.get(saasName, workspaceName, channelName, fileName));
+        Path filePath = basePath.resolve(Paths.get(saasName, workspaceName, channelName, hash, fileName));
 
         Files.createDirectories(filePath.getParent());
         Files.write(filePath, fileData);
@@ -232,9 +258,7 @@ public class FileUtil {
 //                && fileUploadRepository.findBySaasFileId(fileUploadObject.getSaasFileId()).isEmpty();
 //    }
 
-    private boolean isFileNotStored(StoredFile storedFile) {
-        return storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty();
-    }
+
     private static String sanitizePathSegment(String segment) {
         return segment.replaceAll("[^a-zA-Z0-9-_]", "_");
     }

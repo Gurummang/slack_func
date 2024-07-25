@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,5 +20,7 @@ public interface FileUploadRepository extends JpaRepository<fileUpload, Long> {
     List<fileUpload> findByOrgSaaSInOrderByTimestampDesc(List<OrgSaaS> orgSaaSList);
 
     // Corrected method to find by OrgSaaS fields
+
+    Optional<fileUpload> findBySaasFileIdAndTimestamp(String saasFileId, LocalDateTime timestamp);
     List<fileUpload> findTop10ByOrgSaaS_Org_IdAndOrgSaaS_SaasOrderByTimestampDesc(int orgId, Saas saas);
 }
