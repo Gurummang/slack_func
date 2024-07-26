@@ -25,8 +25,8 @@ public class SlackFileEvent {
     public void handleFileEvent(Map<String, Object> payload) {
         log.info("Handling file event with payload: {}", payload);
         try {
-            String teamId = payload.get("team_id").toString();
-            String fileId = payload.get("file_id").toString();
+            String teamId = payload.get("teamId").toString();
+            String fileId = payload.get("fileId").toString();
 
             OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(teamId).orElse(null);
 

@@ -28,13 +28,6 @@ public class StoredFile {
     @Column(name="save_path",columnDefinition = "TEXT", nullable = false)
     private String SavePath;
 
-//    @Column(nullable = false, updatable = false, name = "created_at")
-//    private Timestamp createdAt;
-
-    @Column(name = "processed", nullable = false)
-    @Builder.Default
-    private boolean processed = false;
-
     @JsonIgnore
     @OneToOne(mappedBy = "storedFile", cascade = CascadeType.ALL)
     private VtReport vtReport;
