@@ -4,17 +4,13 @@ import com.GASB.slack_func.annotation.ValidEmail;
 import com.GASB.slack_func.repository.org.AdminRepo;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 @Component
+@RequiredArgsConstructor
 public class EmailValidator implements ConstraintValidator<ValidEmail, String> {
 
     private final AdminRepo adminRepo;
-
-    @Autowired
-    public EmailValidator(AdminRepo adminRepo) {
-        this.adminRepo = adminRepo;
-    }
 
     @Override
     public boolean isValid(String email, ConstraintValidatorContext context) {
