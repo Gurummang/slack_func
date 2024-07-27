@@ -28,20 +28,20 @@ public class SlackUserService {
     private final OrgSaaSRepo orgSaaSRepo;
 
     @Async("threadPoolTaskExecutor")
-    public CompletableFuture<Void> slackFirstUsers(String spaceId, int orgId) {
+    public CompletableFuture<Void> slackFirstUsers(int workspace_config_id) {
         return CompletableFuture.runAsync(() -> {
-            log.info("SpaceId : {}", spaceId);
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSpaceId(orgId, spaceId)
-                    .orElseThrow(() -> new RuntimeException("OrgSaaS not found"));
+            log.info("workspace_config_id : {}", workspace_config_id);
             List<User> slackUsers = null;
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findById(workspace_config_id)
+                    .orElseThrow(() -> new IllegalArgumentException("OrgSaas not found with spaceId: " + workspace_config_id));
             try {
-                slackUsers = slackApiService.fetchUsers(orgSaaSObject);
+                slackUsers = slackApiService.fetchUsers(workspace_config_id);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } catch (SlackApiException e) {
                 throw new RuntimeException(e);
             }
-            int orgSaaSId = orgSaaSObject.getId().intValue();
+            int orgSaaSId = orgSaaSObject.getId();
             log.info("orgSaaSId: {}", orgSaaSId);
             List<MonitoredUsers> monitoredUsers = slackUserMapper.toEntity(slackUsers, orgSaaSId);
 

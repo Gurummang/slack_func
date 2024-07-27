@@ -10,6 +10,7 @@ import com.GASB.slack_func.repository.channel.SlackChannelRepository;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
+import com.GASB.slack_func.repository.org.WorkspaceConfigRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
@@ -34,6 +35,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -56,6 +58,7 @@ public class FileUtil {
     private final FileStatusRepository fileStatusRepository;
     private final S3Client s3Client;
     private final RabbitTemplate rabbitTemplate;
+    private final WorkspaceConfigRepo worekSpaceRepo;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -63,11 +66,11 @@ public class FileUtil {
 
     @Async("threadPoolTaskExecutor")
     @Transactional
-    public CompletableFuture<Void> processAndStoreFile(File file, OrgSaaS orgSaaSObject) {
-        return downloadFileAsync(file.getUrlPrivateDownload(), TokenSelector(orgSaaSObject))
+    public CompletableFuture<Void> processAndStoreFile(File file, OrgSaaS orgSaaSObject, int workspaceId) {
+        return downloadFileAsync(file.getUrlPrivateDownload(), getToken(workspaceId))
                 .thenApply(fileData -> {
                     try {
-                        return handleFileProcessing(file, orgSaaSObject, fileData);
+                        return handleFileProcessing(file, orgSaaSObject, fileData, workspaceId);
                     } catch (IOException | NoSuchAlgorithmException e) {
                         throw new RuntimeException("File processing failed", e);
                     }
@@ -108,9 +111,9 @@ public class FileUtil {
         }
     }
 
-    private Void handleFileProcessing(File file, OrgSaaS orgSaaSObject, byte[] fileData) throws IOException, NoSuchAlgorithmException {
+    private Void handleFileProcessing(File file, OrgSaaS orgSaaSObject, byte[] fileData, int workspaceId) throws IOException, NoSuchAlgorithmException {
         String hash = calculateHash(fileData);
-        String workspaceName = orgSaaSObject.getConfig().getSaasname();
+        String workspaceName = worekSpaceRepo.findById(workspaceId).get().getWorkspaceName();
 
         // 채널 및 사용자 정보 가져오기
         String channelId = getFirstChannelId(file);
@@ -270,8 +273,16 @@ public class FileUtil {
     }
 
     public String TokenSelector(OrgSaaS orgSaaSObject) {
-        return orgSaaSObject.getConfig().getToken();
+        WorkspaceConfig workspaceConfig = worekSpaceRepo.findById(orgSaaSObject.getId()).get();
+        return workspaceConfig.getToken();
     }
+
+    public String getToken(int workespaceId) {
+        return worekSpaceRepo.findById(workespaceId)
+                .orElseThrow(() -> new NoSuchElementException("No token found for spaceId: " + workespaceId))
+                .getToken();
+    }
+
 
     protected int calculateTotalFileSize(List<fileUpload> targetFileList) {
         log.info("targetFileList: {}", targetFileList);

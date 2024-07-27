@@ -19,7 +19,7 @@ public class Gscan {
     private Integer id;
 
     @OneToOne
-    @JoinColumn(name = "stored_file_id", nullable = false,referencedColumnName = "id")
+    @JoinColumn(name = "file_id", nullable = false,referencedColumnName = "id")
     private StoredFile storedFile;
 
     @Column(name = "step2_detail", columnDefinition = "TEXT")

@@ -41,16 +41,13 @@ public class SlackFileService {
     private final FileStatusRepository fileStatusRepository;
     private final VtReportRepository vtReportRepository;
     @Transactional
-    public void fetchAndStoreFiles(String spaceId, int orgId) {
+    public void fetchAndStoreFiles(int workspaceId) {
         try {
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findByOrgIdAndSpaceId(orgId, spaceId).get();
-            List<File> fileList = slackApiService.fetchFiles(orgSaaSObject);
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findById(workspaceId).orElse(null);
+            List<File> fileList = slackApiService.fetchFiles(workspaceId);
 
-
-//            String spaceName = orgSaaS.getConfig().getSaasname();
-//            String workspaceName = slackSpaceInfoService.getCurrentSpaceName();
             for (File file : fileList) {
-                fileUtil.processAndStoreFile(file, orgSaaSObject);
+                fileUtil.processAndStoreFile(file, orgSaaSObject, workspaceId);
             }
         } catch (Exception e) {
             log.error("Error processing files", e);
@@ -63,7 +60,7 @@ public class SlackFileService {
             List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(org_id, saas);
             log.info("orgSaaSList: {}", orgSaaSList);
             // OrgSaaS 리스트를 기반으로 최근 파일 업로드 정보를 가져옵니다.
-            List<fileUpload> recentFileUploads = fileUploadRepository.findByOrgSaaSInOrderByTimestampDesc(orgSaaSList);
+            List<fileUpload> recentFileUploads = fileUploadRepository.findTop10ByOrgSaaSInOrderByTimestampDesc(orgSaaSList);
 
             // DTO 리스트를 생성하여 반환합니다.
             return recentFileUploads.stream().map(upload -> {
@@ -202,8 +199,8 @@ public class SlackFileService {
 
         return SlackFileSizeDto.builder()
                 .totalSize((float) totalSize / 1048576)
-                .sensitiveSize((float) sensitiveSize)
-                .maliciousSize((float) maliciousSize)
+                .sensitiveSize((float) sensitiveSize / 1048576)
+                .maliciousSize((float) maliciousSize / 1048576)
                 .build();
     }
 

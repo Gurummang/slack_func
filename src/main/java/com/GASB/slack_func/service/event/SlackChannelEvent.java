@@ -25,9 +25,12 @@ public class SlackChannelEvent {
     public void handleChannelEvent(Map<String, Object> payload) {
         log.info("Handling channel event");
         try {
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(payload.get("teamId").toString()).get();
-            String token = fileUtil.TokenSelector(orgSaaSObject);
-            Conversation new_conversation = slackApiService.fetchConversationInfo(payload.get("channelId").toString(),orgSaaSObject);
+
+            String spaceId = payload.get("teamId").toString();
+            String channdlId = payload.get("channelId").toString();
+
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(spaceId).get();
+            Conversation new_conversation = slackApiService.fetchConversationInfo(channdlId,orgSaaSObject);
             slackChannelService.addChannel(new_conversation,orgSaaSObject);
             log.info("Channel event processed successfully");
         } catch (Exception e) {

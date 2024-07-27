@@ -29,14 +29,12 @@ public class SlackChannelService {
     private final FileUtil fileUtil;
 
     @Async("threadPoolTaskExecutor")
-    public CompletableFuture<Void> slackFirstChannels(String spaceId, int orgId) {
+    public CompletableFuture<Void> slackFirstChannels(int workspace_config_id) {
         return CompletableFuture.runAsync(() -> {
             try {
-                OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceIdAndOrgId(spaceId, orgId)
-                        .orElseThrow(() -> new RuntimeException("OrgSaaS not found"));
-
-                List<Conversation> conversations = slackApiService.fetchConversations(orgSaaSObject);
-                List<ChannelList> slackChannels = slackChannelMapper.toEntity(conversations, orgSaaSObject);
+                OrgSaaS orgSaaS = orgSaaSRepo.findById(workspace_config_id).orElse(null); //흠..
+                List<Conversation> conversations = slackApiService.fetchConversations(workspace_config_id);
+                List<ChannelList> slackChannels = slackChannelMapper.toEntity(conversations, orgSaaS);
 
                 // 중복된 channel_id를 제외하고 저장할 채널 목록 생성
                 List<ChannelList> filteredChannels = slackChannels.stream()

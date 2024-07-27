@@ -18,6 +18,8 @@ public interface FileUploadRepository extends JpaRepository<fileUpload, Long> {
     List<fileUpload> findTop10ByOrderByTimestampDesc();
     List<fileUpload> findByOrgSaaS(OrgSaaS orgSaaS);
     List<fileUpload> findByOrgSaaSInOrderByTimestampDesc(List<OrgSaaS> orgSaaSList);
+    List<fileUpload> findTop10ByOrgSaaSInOrderByTimestampDesc(List<OrgSaaS> orgSaasList);
+
 
     // Corrected method to find by OrgSaaS fields
 

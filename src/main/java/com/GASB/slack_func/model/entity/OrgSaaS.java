@@ -18,7 +18,7 @@ public class OrgSaaS {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long id;
+    private int id;
 
     @ManyToOne
     @JoinColumn(name = "org_id", nullable = false)
@@ -31,12 +31,8 @@ public class OrgSaaS {
     @Column(name = "status", nullable = false)
     private int status;
 
-    @Column(name = "space_id")
+    @Column(name = "space_id", unique = true)
     private String spaceId;
-
-    @ManyToOne
-    @JoinColumn(name = "config", nullable = false)
-    private WorkspaceConfig config;
 
     @Column(name = "security_score")
     private int securityScore;
@@ -44,4 +40,6 @@ public class OrgSaaS {
     @OneToMany(mappedBy = "orgSaas", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChannelList> channels;
 
+    @OneToOne(mappedBy = "orgSaas", cascade = CascadeType.ALL)
+    private WorkspaceConfig config;
 }
