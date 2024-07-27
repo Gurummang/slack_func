@@ -22,8 +22,10 @@ public class SlackUserEvent {
     public void handleUserEvent(Map<String, Object> payload) {
         log.info("Handling user event");
         try {
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(payload.get("teamId").toString()).get();
-            slackUserService.addUser(slackApiService.fetchUserInfo(payload.get("joinedUserId").toString(),orgSaaSObject));
+            String spaceId = payload.get("teamId").toString();
+            String userId = payload.get("joinedUserId").toString();
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(spaceId).get();
+            slackUserService.addUser(slackApiService.fetchUserInfo(userId,orgSaaSObject));
             log.info("User event processed successfully");
         } catch (Exception e) {
             log.error("Unexpected error processing user event", e);

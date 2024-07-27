@@ -32,12 +32,10 @@ public class SlackInitController {
     // 원래 여기서 AOP던 뭐던 인증을 통해서 요청한 클라이언트의 값을 받아옴
     @PostMapping("/channels")
     public ResponseEntity<Map<String, String>> fetchAndSaveChannels(@Valid @RequestBody ExtractData request) {
-        String spaceId = request.getSpaceId();
-        String email = request.getEmail();
+        int workspace_config_id = request.getWorkspace_config_id();
         Map<String, String> response = new HashMap<>();
-        int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
         try {
-            slackChannelService.slackFirstChannels(spaceId, orgId); // 임시값 1
+            slackChannelService.slackFirstChannels(workspace_config_id); // 임시값 1
             response.put("status", "success");
             response.put("message", "Channels saved successfully");
             log.info("Channels saved successfully");
@@ -52,12 +50,10 @@ public class SlackInitController {
 
     @PostMapping("/users")
     public ResponseEntity<Map<String, String>> fetchAndSaveUsers(@Valid @RequestBody ExtractData request) {
-        String spaceId = request.getSpaceId();
-        String email = request.getEmail();
+        int workspace_config_id = request.getWorkspace_config_id();
         Map<String, String> response = new HashMap<>();
-        int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
         try {
-            slackUserService.slackFirstUsers(spaceId, orgId);
+            slackUserService.slackFirstUsers(workspace_config_id);
             response.put("status", "success");
             response.put("message", "Users saved successfully");
             return ResponseEntity.ok(response);
@@ -72,11 +68,9 @@ public class SlackInitController {
     @PostMapping("/files")
     public ResponseEntity<Map<String, String>> fetchAndSaveFiles(@Valid @RequestBody ExtractData request) {
         Map<String, String> response = new HashMap<>();
-        String email = request.getEmail();
-        String spaceId = request.getSpaceId();
-        int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
+        int workspace_config_id = request.getWorkspace_config_id();
         try {
-            slackFileService.fetchAndStoreFiles(spaceId, orgId);
+            slackFileService.fetchAndStoreFiles(workspace_config_id);
             response.put("status", "success");
             response.put("message", "Files saved successfully");
             return ResponseEntity.ok(response);
@@ -90,14 +84,13 @@ public class SlackInitController {
 
     @PostMapping("/all")
     public ResponseEntity<Map<String, String>> fetchAndSaveAll(@Valid @RequestBody ExtractData request) {
-        String spaceId = request.getSpaceId();
-        String email = request.getEmail();
+
+        int workspace_config_id = request.getWorkspace_config_id();
         Map<String, String> response = new HashMap<>();
-        int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
         try {
-            slackChannelService.slackFirstChannels(spaceId, orgId); // 임시 org_saas_id
-            slackUserService.slackFirstUsers(spaceId, orgId);
-            slackFileService.fetchAndStoreFiles(spaceId, orgId);
+            slackChannelService.slackFirstChannels(workspace_config_id); // 임시 org_saas_id
+            slackUserService.slackFirstUsers(workspace_config_id);
+            slackFileService.fetchAndStoreFiles(workspace_config_id);
             response.put("status", "success");
             response.put("message", "All data saved successfully");
             return ResponseEntity.ok(response);

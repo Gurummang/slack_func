@@ -18,7 +18,7 @@ public class OrgSaaS {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long id;
+    private int id;
 
     @ManyToOne
     @JoinColumn(name = "org_id", nullable = false)
@@ -40,6 +40,6 @@ public class OrgSaaS {
     @OneToMany(mappedBy = "orgSaas", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChannelList> channels;
 
-    @OneToOne(mappedBy = "orgSaas", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "orgSaas", cascade = CascadeType.ALL)
     private WorkspaceConfig config;
 }

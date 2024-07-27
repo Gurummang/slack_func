@@ -17,13 +17,13 @@ import java.sql.Timestamp;
 public class WorkspaceConfig {
     @Id
     @Column(name = "id", nullable = false)
-    private String id; // This corresponds to space_id in OrgSaaS
-
-    @Column(name = "saas_admin_email", nullable = false, length = 100)
-    private String saasAdminEmail;
+    private int id; // This corresponds to id in OrgSaaS
 
     @Column(name = "workspace_name", nullable = false, length = 100)
     private String workspaceName;
+
+    @Column(name = "saas_admin_email", nullable = false, length = 100)
+    private String saasAdminEmail;
 
     @Column(name = "token", nullable = false, length = 100)
     private String token;

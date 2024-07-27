@@ -27,8 +27,8 @@ public class SlackApiService {
         this.fileUtil = fileUtil;
     }
     // ConversationsList API호출 메서드
-    public List<Conversation> fetchConversations(OrgSaaS orgSaaS) throws IOException, SlackApiException {
-        token = fileUtil.TokenSelector(orgSaaS);
+    public List<Conversation> fetchConversations(int workspaceId) throws IOException, SlackApiException {
+        token = fileUtil.getToken(workspaceId);
         ConversationsListResponse conversationsResponse = slack.methods(token).conversationsList(r -> r);
         if (conversationsResponse.isOk()) {
             return conversationsResponse.getChannels();
@@ -38,8 +38,8 @@ public class SlackApiService {
     }
 
     // users.list API호출 메서드
-    public List<User> fetchUsers(OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
-        token = fileUtil.TokenSelector(orgSaaSObject);
+    public List<User> fetchUsers(int workspaceId) throws IOException, SlackApiException {
+        token = fileUtil.getToken(workspaceId);
         UsersListResponse usersListResponse = slack.methods(token).usersList(r -> r);
         if (usersListResponse.isOk()) {
             return usersListResponse.getMembers();
@@ -48,8 +48,8 @@ public class SlackApiService {
         }
     }
     // files.list API호출 메서드
-    public List<File> fetchFiles(OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
-        token = fileUtil.TokenSelector(orgSaaSObject);
+    public List<File> fetchFiles(int workspaceId) throws IOException, SlackApiException {
+        token = fileUtil.getToken(workspaceId);
         FilesListResponse filesListResponse = slack.methods(token).filesList(r -> r);
         if (filesListResponse.isOk()) {
             return filesListResponse.getFiles();
@@ -59,8 +59,8 @@ public class SlackApiService {
     }
 
     // files.info API호출 메서드
-    public File fetchFileInfo(String fileId, OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
-        token = fileUtil.TokenSelector(orgSaaSObject);
+    public File fetchFileInfo(String fileId, int workspaceId) throws IOException, SlackApiException {
+        token = fileUtil.getToken(workspaceId);
         com.slack.api.methods.response.files.FilesInfoResponse filesInfoResponse = slack.methods(token).filesInfo(r -> r.file(fileId));
         if (filesInfoResponse.isOk()) {
             return filesInfoResponse.getFile();
