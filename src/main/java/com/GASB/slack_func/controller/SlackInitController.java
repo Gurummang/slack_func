@@ -1,15 +1,16 @@
 package com.GASB.slack_func.controller;
 
+import com.GASB.slack_func.annotation.SlackInitGroup;
 import com.GASB.slack_func.configuration.ExtractData;
 import com.GASB.slack_func.repository.org.AdminRepo;
 import com.GASB.slack_func.service.SlackChannelService;
 import com.GASB.slack_func.service.SlackUserService;
 import com.GASB.slack_func.service.file.SlackFileService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,7 +32,7 @@ public class SlackInitController {
 
     // 원래 여기서 AOP던 뭐던 인증을 통해서 요청한 클라이언트의 값을 받아옴
     @PostMapping("/channels")
-    public ResponseEntity<Map<String, String>> fetchAndSaveChannels(@Valid @RequestBody ExtractData request) {
+    public ResponseEntity<Map<String, String>> fetchAndSaveChannels(@RequestBody @Validated(SlackInitGroup.class) ExtractData request) {
         int workspace_config_id = request.getWorkspace_config_id();
         Map<String, String> response = new HashMap<>();
         try {
@@ -49,7 +50,7 @@ public class SlackInitController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<Map<String, String>> fetchAndSaveUsers(@Valid @RequestBody ExtractData request) {
+    public ResponseEntity<Map<String, String>> fetchAndSaveUsers(@RequestBody @Validated(SlackInitGroup.class) ExtractData request) {
         int workspace_config_id = request.getWorkspace_config_id();
         Map<String, String> response = new HashMap<>();
         try {
@@ -66,7 +67,7 @@ public class SlackInitController {
     }
 
     @PostMapping("/files")
-    public ResponseEntity<Map<String, String>> fetchAndSaveFiles(@Valid @RequestBody ExtractData request) {
+    public ResponseEntity<Map<String, String>> fetchAndSaveFiles(@RequestBody @Validated(SlackInitGroup.class) ExtractData request) {
         Map<String, String> response = new HashMap<>();
         int workspace_config_id = request.getWorkspace_config_id();
         try {
@@ -83,7 +84,7 @@ public class SlackInitController {
     }
 
     @PostMapping("/all")
-    public ResponseEntity<Map<String, String>> fetchAndSaveAll(@Valid @RequestBody ExtractData request) {
+    public ResponseEntity<Map<String, String>> fetchAndSaveAll(@RequestBody @Validated(SlackInitGroup.class) ExtractData request) {
 
         int workspace_config_id = request.getWorkspace_config_id();
         Map<String, String> response = new HashMap<>();

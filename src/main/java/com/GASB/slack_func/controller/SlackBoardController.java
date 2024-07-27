@@ -1,5 +1,6 @@
 package com.GASB.slack_func.controller;
 
+import com.GASB.slack_func.annotation.SlackBoardGroup;
 import com.GASB.slack_func.configuration.ExtractData;
 import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
@@ -10,11 +11,11 @@ import com.GASB.slack_func.repository.org.AdminRepo;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.org.SaasRepo;
 import com.GASB.slack_func.service.file.SlackFileService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,7 +36,7 @@ public class SlackBoardController {
     private final AdminRepo adminRepo;
 
     @PostMapping("/files/size")
-    public ResponseEntity<SlackFileSizeDto> fetchFileSize(@Valid @RequestBody ExtractData request){
+    public ResponseEntity<SlackFileSizeDto> fetchFileSize(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request){
         try{
             String email = request.getEmail();
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
@@ -51,7 +52,7 @@ public class SlackBoardController {
     }
 
     @PostMapping("/files/count")
-    public ResponseEntity<SlackFileCountDto> fetchFileCount(@Valid @RequestBody ExtractData request){
+    public ResponseEntity<SlackFileCountDto> fetchFileCount(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request){
 
         try{
             String email = request.getEmail();
@@ -67,7 +68,7 @@ public class SlackBoardController {
         }
     }
     @PostMapping("/files/recent")
-    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles(@Valid @RequestBody ExtractData request){
+    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request){
         try {
             String email = request.getEmail();
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
