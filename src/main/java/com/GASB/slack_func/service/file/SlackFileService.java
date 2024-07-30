@@ -47,11 +47,23 @@ public class SlackFileService {
             List<File> fileList = slackApiService.fetchFiles(workspaceId);
 
             for (File file : fileList) {
+                log.info("Processing file info : {}, {}", file.getMode(), file.getPrettyType());
+
+                if (shouldSkipFile(file)) {
+                    log.info("File is a quip or canvas file, skipping processing: Mode={}, PrettyType={}", file.getMode(), file.getPrettyType());
+                    continue;
+                }
+
                 fileUtil.processAndStoreFile(file, orgSaaSObject, workspaceId);
             }
         } catch (Exception e) {
             log.error("Error processing files", e);
         }
+    }
+    private boolean shouldSkipFile(File file) {
+        return "quip".equalsIgnoreCase(file.getMode()) ||
+                "캔버스".equalsIgnoreCase(file.getPrettyType()) ||
+                "canvas".equalsIgnoreCase(file.getPrettyType());
     }
 
     public List<SlackRecentFileDTO> slackRecentFiles(int org_id, Saas saas) {
@@ -93,13 +105,6 @@ public class SlackFileService {
             return Collections.emptyList();
         }
     }
-
-
-
-
-
-
-
 
     public SlackTotalFileDataDto slackTotalFilesData() {
         List<fileUpload> fileUploads = fileUploadRepository.findAll();
@@ -171,18 +176,6 @@ public class SlackFileService {
         totalFileDataDto.setFiles(fileDetails);
 
         return totalFileDataDto;
-    }
-
-
-    // 전달값으로 어떤 조직인지, 어떤 SaaS인지 구분 필요, 근데 지금 api 엔드포인트 자체가 SaaS를 내포해서 일단은 Org
-    public SlackFileSizeDto slackFileSize(OrgSaaS orgSaaSObject) {
-        List<fileUpload> TargetFileList = fileUploadRepository.findByOrgSaaS(orgSaaSObject);
-
-        return SlackFileSizeDto.builder()
-                .totalSize((float) fileUtil.calculateTotalFileSize(TargetFileList) / 1048576)
-                .sensitiveSize((float) fileUtil.CalcSlackSensitiveSize(TargetFileList))
-                .maliciousSize((float) fileUtil.CalcSlackMaliciousSize(TargetFileList))
-                .build();
     }
 
     public SlackFileSizeDto SumOfSlackFileSize(List<OrgSaaS> orgSaaSList){
