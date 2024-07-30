@@ -139,7 +139,7 @@ public class FileUtil {
         Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user);
         activity.setUploadChannel(uploadedChannelPath);
 
-        scanUtil.scanFile(filePath, fileUploadObject, file.getMimetype());
+
 
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
@@ -167,6 +167,7 @@ public class FileUtil {
                 log.warn("Duplicate file detected: {}", file.getName());
             }
         }
+        scanUtil.scanFile(filePath, fileUploadObject, file.getMimetype(), file.getFiletype());
         uploadFileToS3(filePath, s3Key);
 
         return null;

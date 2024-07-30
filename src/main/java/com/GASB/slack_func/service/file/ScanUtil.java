@@ -23,35 +23,35 @@ public class ScanUtil {
     private final TypeScanRepo typeScanRepo;
 
     @Async
-    public void scanFile(String path, fileUpload fileUploadObject, String MIMEType) {
+    public void scanFile(String path, fileUpload fileUploadObject, String MIMEType, String Extension) {
         try {
-            File inputFile = getFile(path);
+            File inputFile = new File(path);
             if (!inputFile.exists() || !inputFile.isFile()) {
                 log.error("Invalid file path: {}", path);
                 return;
             }
 
             String fileExtension = getFileExtension(inputFile);
-            String mimeType = MIMEType;
-            if (mimeType == null || mimeType.isEmpty()) {
-                mimeType = detectMimeType(inputFile);
-            }
+            String mimeType = MIMEType != null && !MIMEType.isEmpty() ? MIMEType : tika.detect(inputFile);
             String expectedMimeType = MimeType.getMimeTypeByExtension(fileExtension);
             String fileSignature = null;
-            boolean isMatched = false;
-            log.info("expectedMimeType : {}",expectedMimeType);
-            log.info("mime type: {}", mimeType);
-            // slack의 경우 캔버스 파일의 경우에는 확장자가 없고 mime타입이 text/html로 나오는데 어떻게하지...
-            if (fileExtension.equals("txt")) {
-                isMatched = mimeType.equals(expectedMimeType);
-                AddData(fileUploadObject, isMatched, mimeType, "txt", fileExtension);
-            } else if (fileExtension.isEmpty()){
+            boolean isMatched;
 
-                AddData(fileUploadObject, false, mimeType, "unknown", "unsupported");
+            if (fileExtension.equals("txt")) {
+                // txt 파일의 경우 시그니처가 없으므로 MIME 타입만으로 검증
+                isMatched = mimeType.equals(expectedMimeType);
+                addData(fileUploadObject, isMatched, mimeType, "unknown", fileExtension);
             } else {
                 fileSignature = getFileSignature(inputFile, fileExtension);
-                isMatched = mimeType.equals(expectedMimeType) && fileSignature.equalsIgnoreCase(fileExtension);
-                AddData(fileUploadObject, isMatched, mimeType, fileSignature, fileExtension);
+                if (fileSignature == null || fileSignature.isEmpty()) {
+                    // 확장자와 MIME 타입만 존재하는 경우
+                    isMatched = checkWithoutSignature(mimeType, expectedMimeType, fileExtension);
+                    addData(fileUploadObject, isMatched, mimeType, "unknown", fileExtension);
+                } else {
+                    // MIME 타입, 확장자, 시그니처가 모두 존재하는 경우
+                    isMatched = checkAllType(mimeType, fileExtension, fileSignature, expectedMimeType);
+                    addData(fileUploadObject, isMatched, mimeType, fileSignature, fileExtension);
+                }
             }
         } catch (IOException e) {
             log.error("Error scanning file", e);
@@ -60,9 +60,10 @@ public class ScanUtil {
 
     @Async
     @Transactional
-    protected void AddData(fileUpload fileUploadObject, boolean correct, String mimeType, String signature, String extension) {
+    protected void addData(fileUpload fileUploadObject, boolean correct, String mimeType, String signature, String extension) {
         if (fileUploadObject == null || fileUploadObject.getId() == null) {
-            log.error("Invalid file upload object: {}", fileUploadObject);
+            log.error("Invalid file upload object: {}, {}", fileUploadObject, fileUploadObject.getId());
+
             throw new IllegalArgumentException("Invalid file upload object");
         }
         TypeScan typeScan = TypeScan.builder()
@@ -73,15 +74,6 @@ public class ScanUtil {
                 .extension(extension)
                 .build();
         typeScanRepo.save(typeScan);
-    }
-
-
-    private File getFile(String path) {
-        return new File(path);
-    }
-
-    private String detectMimeType(File file) throws IOException {
-        return tika.detect(file);
     }
 
     private String getFileExtension(File file) {
@@ -96,7 +88,7 @@ public class ScanUtil {
     private String getFileSignature(File file, String extension) throws IOException {
         if (extension == null || extension.isEmpty()) {
             log.error("Invalid file extension: {}", extension);
-            return "unknown"; // 기본값으로 "unknown"을 반환
+            return null; // 기본값으로 "unknown"을 반환
         }
 
         int signatureLength = HeaderSignature.getSignatureLengthByExtension(extension);
@@ -124,4 +116,17 @@ public class ScanUtil {
 
         return detectedExtension;
     }
+
+    private boolean checkAllType(String mimeType, String extension, String signature, String expectedMimeType) {
+        log.info("Checking all types: mimeType={}, extension={}, signature={}, expectedMimeType={}", mimeType, extension, signature, expectedMimeType);
+        return mimeType.equals(expectedMimeType) &&
+                MimeType.MimeMatch(mimeType, signature) &&
+                MimeType.MimeMatch(mimeType, extension);
+    }
+
+    private boolean checkWithoutSignature(String mimeType, String expectedMimeType, String extension) {
+        return mimeType.equals(expectedMimeType) &&
+                MimeType.MimeMatch(mimeType, extension);
+    }
+
 }

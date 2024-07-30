@@ -30,6 +30,10 @@ public class SlackFileEvent {
 
             OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(spaceId).orElse(null);
             File fileInfo = slackApiService.fetchFileInfo(fileId, orgSaaSObject.getId());
+            if (fileInfo.getMode() == "quip" || fileInfo.getPrettyType() == "캔버스" || fileInfo.getPrettyType() == "canvas"){
+                log.info("File is a quip or canvas file, skipping processing");
+                return;
+            }
             fileService.processAndStoreFile(fileInfo, orgSaaSObject, orgSaaSObject.getId());
 
             log.info("File event processed successfully for file ID: {}", fileInfo.getId());

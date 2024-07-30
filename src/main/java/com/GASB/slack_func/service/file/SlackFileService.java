@@ -47,11 +47,23 @@ public class SlackFileService {
             List<File> fileList = slackApiService.fetchFiles(workspaceId);
 
             for (File file : fileList) {
+                log.info("Processing file info : {}, {}", file.getMode(), file.getPrettyType());
+
+                if (shouldSkipFile(file)) {
+                    log.info("File is a quip or canvas file, skipping processing: Mode={}, PrettyType={}", file.getMode(), file.getPrettyType());
+                    continue;
+                }
+
                 fileUtil.processAndStoreFile(file, orgSaaSObject, workspaceId);
             }
         } catch (Exception e) {
             log.error("Error processing files", e);
         }
+    }
+    private boolean shouldSkipFile(File file) {
+        return "quip".equalsIgnoreCase(file.getMode()) ||
+                "캔버스".equalsIgnoreCase(file.getPrettyType()) ||
+                "canvas".equalsIgnoreCase(file.getPrettyType());
     }
 
     public List<SlackRecentFileDTO> slackRecentFiles(int org_id, Saas saas) {

@@ -1,11 +1,13 @@
 package com.GASB.slack_func.service.file;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Getter
+@Slf4j
 public enum MimeType {
     // Image files
     JPG("jpg", "image/jpeg"),
@@ -81,8 +83,10 @@ public enum MimeType {
 
     public static boolean MimeMatch(String mimeType, String extension) {
         String expectedMimeType = getMimeTypeByExtension(extension);
+        log.info("MIME 타입 : " + mimeType + " / 기대 MIME 타입 : " + expectedMimeType);
         return mimeType.equals(expectedMimeType);
     } // 함수 설명 : MIME 타입과 확장자가 일치하는지 확인
+
 
 
 }
