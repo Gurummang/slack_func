@@ -94,13 +94,6 @@ public class SlackFileService {
         }
     }
 
-
-
-
-
-
-
-
     public SlackTotalFileDataDto slackTotalFilesData() {
         List<fileUpload> fileUploads = fileUploadRepository.findAll();
         List<SlackTotalFileDataDto.FileDetail> fileDetails = fileUploads.stream().map(fileUpload -> {
@@ -171,18 +164,6 @@ public class SlackFileService {
         totalFileDataDto.setFiles(fileDetails);
 
         return totalFileDataDto;
-    }
-
-
-    // 전달값으로 어떤 조직인지, 어떤 SaaS인지 구분 필요, 근데 지금 api 엔드포인트 자체가 SaaS를 내포해서 일단은 Org
-    public SlackFileSizeDto slackFileSize(OrgSaaS orgSaaSObject) {
-        List<fileUpload> TargetFileList = fileUploadRepository.findByOrgSaaS(orgSaaSObject);
-
-        return SlackFileSizeDto.builder()
-                .totalSize((float) fileUtil.calculateTotalFileSize(TargetFileList) / 1048576)
-                .sensitiveSize((float) fileUtil.CalcSlackSensitiveSize(TargetFileList))
-                .maliciousSize((float) fileUtil.CalcSlackMaliciousSize(TargetFileList))
-                .build();
     }
 
     public SlackFileSizeDto SumOfSlackFileSize(List<OrgSaaS> orgSaaSList){

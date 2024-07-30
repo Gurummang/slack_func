@@ -59,6 +59,7 @@ public class FileUtil {
     private final S3Client s3Client;
     private final RabbitTemplate rabbitTemplate;
     private final WorkspaceConfigRepo worekSpaceRepo;
+    private final ScanUtil scanUtil;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -138,6 +139,8 @@ public class FileUtil {
         Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user);
         activity.setUploadChannel(uploadedChannelPath);
 
+        scanUtil.scanFile(filePath, fileUploadObject, file.getMimetype());
+
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
             if (activityDuplicate(activity)) {
@@ -155,7 +158,7 @@ public class FileUtil {
             if (isFileNotStored(storedFile)) {
                 try {
                     storedFilesRepository.save(storedFile);
-                    sendMessage(storedFile.getId());
+//                    sendMessage(storedFile.getId());
                     log.info("File uploaded successfully: {}", file.getName());
                 } catch (DataIntegrityViolationException e) {
                     log.warn("Duplicate entry detected and ignored: {}", file.getName());
@@ -211,7 +214,6 @@ public class FileUtil {
 
         Files.createDirectories(filePath.getParent());
         Files.write(filePath, fileData);
-
         return filePath.toString();
     }
 
@@ -365,4 +367,6 @@ public class FileUtil {
         rabbitTemplate.convertAndSend(message);
         System.out.println("Sent message: " + message);
     }
+
+
 }

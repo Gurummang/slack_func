@@ -18,7 +18,7 @@ public class TypeScan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "upload_id", nullable = false, referencedColumnName = "id")
     private fileUpload file_upload;
 
