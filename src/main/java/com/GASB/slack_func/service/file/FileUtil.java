@@ -158,7 +158,7 @@ public class FileUtil {
             if (isFileNotStored(storedFile)) {
                 try {
                     storedFilesRepository.save(storedFile);
-//                    sendMessage(storedFile.getId());
+                    sendMessage(storedFile.getId());
                     log.info("File uploaded successfully: {}", file.getName());
                 } catch (DataIntegrityViolationException e) {
                     log.warn("Duplicate entry detected and ignored: {}", file.getName());
