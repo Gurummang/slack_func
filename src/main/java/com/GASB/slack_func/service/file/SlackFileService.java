@@ -191,9 +191,9 @@ public class SlackFileService {
         }
 
         return SlackFileSizeDto.builder()
-                .totalSize((float) totalSize / 1048576)
-                .sensitiveSize((float) sensitiveSize / 1048576)
-                .maliciousSize((float) maliciousSize / 1048576)
+                .totalSize((float) totalSize / 1073741824)
+                .sensitiveSize((float) sensitiveSize / 1073741824)
+                .maliciousSize((float) maliciousSize / 1073741824)
                 .build();
     }
 
