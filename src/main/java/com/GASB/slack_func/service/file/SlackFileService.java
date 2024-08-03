@@ -3,7 +3,6 @@ package com.GASB.slack_func.service.file;
 import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
-import com.GASB.slack_func.model.dto.file.SlackTotalFileDataDto;
 import com.GASB.slack_func.model.entity.*;
 import com.GASB.slack_func.repository.AV.FileStatusRepository;
 import com.GASB.slack_func.repository.AV.VtReportRepository;
@@ -106,77 +105,77 @@ public class SlackFileService {
         }
     }
 
-    public SlackTotalFileDataDto slackTotalFilesData() {
-        List<fileUpload> fileUploads = fileUploadRepository.findAll();
-        List<SlackTotalFileDataDto.FileDetail> fileDetails = fileUploads.stream().map(fileUpload -> {
-            SlackTotalFileDataDto.FileDetail.FileDetailBuilder detailBuilder = SlackTotalFileDataDto.FileDetail.builder()
-                    .fileId(fileUpload.getSaasFileId())
-                    .timestamp(fileUpload.getTimestamp());
-
-            Activities activity = activitiesRepository.findBysaasFileId(fileUpload.getSaasFileId()).orElse(null);
-            if (activity != null) {
-                detailBuilder.fileName(activity.getFileName());
-                MonitoredUsers user = slackUserRepo.findByUserId(activity.getUser().getUserId()).orElse(null);
-                if (user != null) {
-                    detailBuilder.username(user.getUserName());
-                    OrgSaaS saas = orgSaaSRepo.findById(user.getOrgSaaS().getId()).orElse(null);
-                    if (saas != null) {
-                        detailBuilder.saasName(saas.getSaas().getSaasName());
-                    } else {
-                        detailBuilder.saasName("unknown_saas");
-                    }
-                } else {
-                    detailBuilder.saasName("unknown_saas");
-                }
-            }
-
-            StoredFile storedFile = storedFilesRepository.findBySaltedHash(fileUpload.getHash()).orElse(null);
-            if (storedFile != null) {
-                detailBuilder.fileType(storedFile.getType())
-                        .filePath(Objects.requireNonNull(activity).getUploadChannel());
-//                        .filePath(storedFile.getSavePath());
-
-                VtReport vtReport = vtReportRepository.findByStoredFile(storedFile).orElse(null);
-                if (vtReport != null) {
-                    SlackTotalFileDataDto.FileDetail.VtScanResult vtScanResult = SlackTotalFileDataDto.FileDetail.VtScanResult.builder()
-                            .threatLabel(vtReport.getThreatLabel())
-                            .hash(fileUpload.getHash())
-                            .detectEngine(vtReport.getDetectEngine())
-                            .score(vtReport.getScore())
-                            .V3(vtReport.getV3())
-                            .ALYac(vtReport.getALYac())
-                            .Kaspersky(vtReport.getKaspersky())
-                            .Falcon(vtReport.getFalcon())
-                            .Avast(vtReport.getAvast())
-                            .Sentinelone(vtReport.getSentinelone())
-                            .reportUrl(vtReport.getReportUrl())
-                            .build();
-                    detailBuilder.vtScanResult(vtScanResult);
-                }
-
-                FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
-                if (fileStatus != null) {
-                    SlackTotalFileDataDto.FileDetail.GScanResult gScanResult = SlackTotalFileDataDto.FileDetail.GScanResult.builder()
-                            .status(String.valueOf(fileStatus.getGscanStatus()))
-                            .build();
-                    detailBuilder.gScanResult(gScanResult);
-
-                    SlackTotalFileDataDto.FileDetail.DlpScanResult dlpScanResult = SlackTotalFileDataDto.FileDetail.DlpScanResult.builder()
-                            .status(String.valueOf(fileStatus.getDlpStatus()))
-                            .build();
-                    detailBuilder.dlpScanResult(dlpScanResult);
-                }
-            }
-
-            return detailBuilder.build();
-        }).collect(Collectors.toList());
-
-        SlackTotalFileDataDto totalFileDataDto = new SlackTotalFileDataDto();
-        totalFileDataDto.setStatus("success");
-        totalFileDataDto.setFiles(fileDetails);
-
-        return totalFileDataDto;
-    }
+//    public SlackTotalFileDataDto slackTotalFilesData() {
+//        List<fileUpload> fileUploads = fileUploadRepository.findAll();
+//        List<SlackTotalFileDataDto.FileDetail> fileDetails = fileUploads.stream().map(fileUpload -> {
+//            SlackTotalFileDataDto.FileDetail.FileDetailBuilder detailBuilder = SlackTotalFileDataDto.FileDetail.builder()
+//                    .fileId(fileUpload.getSaasFileId())
+//                    .timestamp(fileUpload.getTimestamp());
+//
+//            Activities activity = activitiesRepository.findBysaasFileId(fileUpload.getSaasFileId()).orElse(null);
+//            if (activity != null) {
+//                detailBuilder.fileName(activity.getFileName());
+//                MonitoredUsers user = slackUserRepo.findByUserId(activity.getUser().getUserId()).orElse(null);
+//                if (user != null) {
+//                    detailBuilder.username(user.getUserName());
+//                    OrgSaaS saas = orgSaaSRepo.findById(user.getOrgSaaS().getId()).orElse(null);
+//                    if (saas != null) {
+//                        detailBuilder.saasName(saas.getSaas().getSaasName());
+//                    } else {
+//                        detailBuilder.saasName("unknown_saas");
+//                    }
+//                } else {
+//                    detailBuilder.saasName("unknown_saas");
+//                }
+//            }
+//
+//            StoredFile storedFile = storedFilesRepository.findBySaltedHash(fileUpload.getHash()).orElse(null);
+//            if (storedFile != null) {
+//                detailBuilder.fileType(storedFile.getType())
+//                        .filePath(Objects.requireNonNull(activity).getUploadChannel());
+////                        .filePath(storedFile.getSavePath());
+//
+//                VtReport vtReport = vtReportRepository.findByStoredFile(storedFile).orElse(null);
+//                if (vtReport != null) {
+//                    SlackTotalFileDataDto.FileDetail.VtScanResult vtScanResult = SlackTotalFileDataDto.FileDetail.VtScanResult.builder()
+//                            .threatLabel(vtReport.getThreatLabel())
+//                            .hash(fileUpload.getHash())
+//                            .detectEngine(vtReport.getDetectEngine())
+//                            .score(vtReport.getScore())
+//                            .V3(vtReport.getV3())
+//                            .ALYac(vtReport.getALYac())
+//                            .Kaspersky(vtReport.getKaspersky())
+//                            .Falcon(vtReport.getFalcon())
+//                            .Avast(vtReport.getAvast())
+//                            .Sentinelone(vtReport.getSentinelone())
+//                            .reportUrl(vtReport.getReportUrl())
+//                            .build();
+//                    detailBuilder.vtScanResult(vtScanResult);
+//                }
+//
+//                FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
+//                if (fileStatus != null) {
+//                    SlackTotalFileDataDto.FileDetail.GScanResult gScanResult = SlackTotalFileDataDto.FileDetail.GScanResult.builder()
+//                            .status(String.valueOf(fileStatus.getGscanStatus()))
+//                            .build();
+//                    detailBuilder.gScanResult(gScanResult);
+//
+//                    SlackTotalFileDataDto.FileDetail.DlpScanResult dlpScanResult = SlackTotalFileDataDto.FileDetail.DlpScanResult.builder()
+//                            .status(String.valueOf(fileStatus.getDlpStatus()))
+//                            .build();
+//                    detailBuilder.dlpScanResult(dlpScanResult);
+//                }
+//            }
+//
+//            return detailBuilder.build();
+//        }).collect(Collectors.toList());
+//
+//        SlackTotalFileDataDto totalFileDataDto = new SlackTotalFileDataDto();
+//        totalFileDataDto.setStatus("success");
+//        totalFileDataDto.setFiles(fileDetails);
+//
+//        return totalFileDataDto;
+//    }
 
     public SlackFileSizeDto SumOfSlackFileSize(List<OrgSaaS> orgSaaSList){
         int totalSize = 0;
