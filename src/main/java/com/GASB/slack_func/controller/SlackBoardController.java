@@ -5,7 +5,6 @@ import com.GASB.slack_func.configuration.ExtractData;
 import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
-import com.GASB.slack_func.model.entity.OrgSaaS;
 import com.GASB.slack_func.model.entity.Saas;
 import com.GASB.slack_func.repository.org.AdminRepo;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
@@ -34,15 +33,17 @@ public class SlackBoardController {
     private final OrgSaaSRepo  orgSaaSRepo;
     private final SaasRepo saasRepo;
     private final AdminRepo adminRepo;
+    private final SlackFileService fileService;
 
     @PostMapping("/files/size")
     public ResponseEntity<SlackFileSizeDto> fetchFileSize(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request){
         try{
             String email = request.getEmail();
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
-            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(orgId,saasRepo.findBySaasName("Slack").orElse(null));
-            log.info("orgSaaSList: {}", orgSaaSList);
-            SlackFileSizeDto slackFileSizeDto = slackFileService.SumOfSlackFileSize(orgSaaSList);
+
+//            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(orgId,saasRepo.findBySaasName("Slack").orElse(null));
+//            log.info("orgSaaSList: {}", orgSaaSList);
+            SlackFileSizeDto slackFileSizeDto = slackFileService.SumOfSlackFileSize(orgId,1);
             return ResponseEntity.ok(slackFileSizeDto);
         } catch (Exception e) {
             log.error("Error fetching file size", e);
@@ -57,9 +58,9 @@ public class SlackBoardController {
         try{
             String email = request.getEmail();
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
-            Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
-            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(orgId,saasObject);
-            SlackFileCountDto slackFileCountDto = slackFileService.SumOfSlackFileCount(orgSaaSList);
+//            Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
+//            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(orgId,saasObject);
+            SlackFileCountDto slackFileCountDto = slackFileService.testCountSum(orgId,1);
             return ResponseEntity.ok(slackFileCountDto);
         } catch (Exception e) {
             log.error("Error fetching file count", e);
