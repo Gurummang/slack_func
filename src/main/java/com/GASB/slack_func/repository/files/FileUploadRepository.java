@@ -22,7 +22,7 @@ public interface FileUploadRepository extends JpaRepository<fileUpload, Long> {
             "JOIN StoredFile sf ON fu.hash = sf.saltedHash " +
             "JOIN MonitoredUsers u ON a.user.userId = u.userId " +
             "WHERE os.org.id = :orgId AND os.saas.id = :saasId " +
-            "ORDER BY fu.timestamp DESC")
+            "ORDER BY fu.timestamp DESC LIMIT 10")
     List<SlackRecentFileDTO> findRecentFilesByOrgIdAndSaasId(@Param("orgId") int orgId, @Param("saasId") int saasId);
     List<fileUpload> findTop10ByOrgSaaSInOrderByTimestampDesc(List<OrgSaaS> orgSaasList);
 
