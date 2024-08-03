@@ -34,11 +34,9 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -252,16 +250,6 @@ public class FileUtil {
         return userOptional.get();
     }
 
-    private OrgSaaS fetchOrgSaaSByUser(MonitoredUsers user) {
-        Optional<OrgSaaS> saasOptional = orgSaaSRepo.findById(user.getOrgSaaS().getId());
-        if (saasOptional.isEmpty()) {
-            log.error("OrgSaaS for user {} not found", user.getUserId());
-            return null;
-        }
-        return saasOptional.get();
-    }
-
-
     private static String sanitizePathSegment(String segment) {
         return segment.replaceAll("[^a-zA-Z0-9-_]", "_");
     }
@@ -284,85 +272,6 @@ public class FileUtil {
                 .orElseThrow(() -> new NoSuchElementException("No token found for spaceId: " + workespaceId))
                 .getToken();
     }
-
-
-    protected int calculateTotalFileSize(List<fileUpload> targetFileList) {
-        log.info("targetFileList: {}", targetFileList);
-        return targetFileList.stream()
-                .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .mapToInt(storedFile -> Optional.of(storedFile.getSize())
-                        .orElse(0))
-                .sum();
-    }
-
-    public int CalcSlackSensitiveSize(List<fileUpload> TargetFileList) {
-        return getSensitiveFileList(TargetFileList).stream()
-                .mapToInt(StoredFile::getSize).sum();
-    }
-
-    public int CalcSlackMaliciousSize(List<fileUpload> TargetFileList) {
-        return getMaliciousFileList(TargetFileList).stream()
-                .mapToInt(StoredFile::getSize).sum();
-    }
-
-    public List<StoredFile> getMaliciousFileList(List<fileUpload> targetFileList) {
-        return targetFileList.stream()
-                .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(storedFile -> vtReportRepository.findByStoredFile(storedFile)
-                        .map(vtReport -> !vtReport.getThreatLabel().equals("none"))
-                        .orElse(false))
-                .collect(Collectors.toList());
-    }
-
-    private List<StoredFile> getSensitiveFileList(List<fileUpload> targetFileList) {
-        return targetFileList.stream()
-                .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(storedFile -> dlpRepo.findByStoredFile(storedFile)
-                        .map(DlpReport::getDlp)
-                        .orElse(false))
-                .collect(Collectors.toList());
-    }
-
-    public int countSensitiveFiles(List<fileUpload> targetFileList) {
-        return (int) targetFileList.stream()
-                .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(storedFile -> {
-                    FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
-                    return fileStatus != null && fileStatus.getDlpStatus() == 1 &&
-                            dlpRepo.findByStoredFile(storedFile)
-                                    .map(DlpReport::getDlp)
-                                    .orElse(false);
-                })
-                .count();
-    }
-
-    public int countMaliciousFiles(List<fileUpload> targetFileList) {
-        return (int) targetFileList.stream()
-                .map(file -> storedFilesRepository.findBySaltedHash(file.getHash()))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(storedFile -> {
-                    FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
-                    return fileStatus != null && fileStatus.getGscanStatus() == 1 &&
-                            vtReportRepository.findByStoredFile(storedFile)
-                                    .map(vtReport -> !vtReport.getThreatLabel().equals("none"))
-                                    .orElse(false);
-                })
-                .count();
-    }
-
-    public int countConnectedAccounts(OrgSaaS orgSaaSObject) {
-        return slackUserRepo.findByOrgSaaS(orgSaaSObject).size();
-    }
-
     public void sendMessage(Long message) {
         rabbitTemplate.convertAndSend(message);
         System.out.println("Sent message: " + message);
