@@ -3,7 +3,7 @@ package com.GASB.slack_func.service.file;
 import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
-import com.GASB.slack_func.model.entity.*;
+import com.GASB.slack_func.model.entity.OrgSaaS;
 import com.GASB.slack_func.repository.AV.FileStatusRepository;
 import com.GASB.slack_func.repository.AV.VtReportRepository;
 import com.GASB.slack_func.repository.activity.FileActivityRepo;
@@ -20,9 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -65,42 +62,11 @@ public class SlackFileService {
                 "canvas".equalsIgnoreCase(file.getPrettyType());
     }
 
-    public List<SlackRecentFileDTO> slackRecentFiles(int org_id, Saas saas) {
+    public List<SlackRecentFileDTO> slackRecentFiles(int orgId, int saasId) {
         try {
-            // 특정 조직과 Saas 애플리케이션에 따라 OrgSaaS 리스트를 가져옵니다.
-            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(org_id, saas);
-            log.info("orgSaaSList: {}", orgSaaSList);
-            // OrgSaaS 리스트를 기반으로 최근 파일 업로드 정보를 가져옵니다.
-            List<fileUpload> recentFileUploads = fileUploadRepository.findTop10ByOrgSaaSInOrderByTimestampDesc(orgSaaSList);
-
-            // DTO 리스트를 생성하여 반환합니다.
-            return recentFileUploads.stream().map(upload -> {
-                Optional<StoredFile> storedFileOpt = storedFilesRepository.findBySaltedHash(upload.getHash());
-                Optional<Activities> activityOpt = activitiesRepository.findBysaasFileId(upload.getSaasFileId());
-
-                // 저장된 파일과 활동이 존재하는 경우에만 처리합니다.
-                if (storedFileOpt.isPresent() && activityOpt.isPresent()) {
-                    StoredFile storedFile = storedFileOpt.get();
-                    Activities activity = activityOpt.get();
-
-                    // 사용자를 찾고 사용자 이름을 설정합니다.
-                    Optional<MonitoredUsers> userOpt = slackUserRepo.findByUserId(activity.getUser().getUserId());
-                    String uploadedBy = userOpt.map(MonitoredUsers::getUserName).orElse("Unknown User");
-
-                    // DTO를 빌드하여 반환합니다.
-                    return SlackRecentFileDTO.builder()
-                            .fileName(activity.getFileName())
-                            .uploadedBy(uploadedBy)
-                            .fileType(storedFile.getType())
-                            .uploadTimestamp(upload.getTimestamp())
-                            .build();
-                }
-
-                // 활동이나 파일이 없는 경우 null 반환
-                return null;
-            }).filter(Objects::nonNull).collect(Collectors.toList());
+            return fileUploadRepository.findRecentFilesByOrgIdAndSaasId(orgId, saasId);
         } catch (Exception e) {
-            log.error("Error retrieving recent files for org_id: {} and saas: {}", org_id, saas, e);
+            log.error("Error retrieving recent files for org_id: {} and saas_id: {}", orgId, saasId, e);
             return Collections.emptyList();
         }
     }

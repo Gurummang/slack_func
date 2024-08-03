@@ -69,12 +69,12 @@ public class SlackBoardController {
         }
     }
     @PostMapping("/files/recent")
-    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request){
+    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request) {
         try {
             String email = request.getEmail();
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
             Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
-            List<SlackRecentFileDTO> recentFiles = slackFileService.slackRecentFiles(orgId, saasObject);
+            List<SlackRecentFileDTO> recentFiles = fileService.slackRecentFiles(orgId, saasObject.getId().intValue());
             return ResponseEntity.ok(recentFiles);
         } catch (Exception e) {
             log.error("Error fetching recent files", e);
