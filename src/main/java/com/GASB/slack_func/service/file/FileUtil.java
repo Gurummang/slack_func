@@ -140,7 +140,6 @@ public class FileUtil {
         activity.setUploadChannel(uploadedChannelPath);
 
 
-
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
             if (activityDuplicate(activity)) {
@@ -314,7 +313,7 @@ public class FileUtil {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .filter(storedFile -> vtReportRepository.findByStoredFile(storedFile)
-                        .map(vtReport -> vtReport.getThreatLabel() != null)
+                        .map(vtReport -> !vtReport.getThreatLabel().equals("none"))
                         .orElse(false))
                 .collect(Collectors.toList());
     }
@@ -354,7 +353,7 @@ public class FileUtil {
                     FileStatus fileStatus = fileStatusRepository.findByStoredFile(storedFile);
                     return fileStatus != null && fileStatus.getGscanStatus() == 1 &&
                             vtReportRepository.findByStoredFile(storedFile)
-                                    .map(vtReport -> vtReport.getThreatLabel() != null)
+                                    .map(vtReport -> !vtReport.getThreatLabel().equals("none"))
                                     .orElse(false);
                 })
                 .count();
