@@ -1,6 +1,7 @@
 package com.GASB.slack_func.service;
 
 import com.GASB.slack_func.mapper.SlackUserMapper;
+import com.GASB.slack_func.model.dto.TopUserDTO;
 import com.GASB.slack_func.model.entity.MonitoredUsers;
 import com.GASB.slack_func.model.entity.OrgSaaS;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
@@ -9,13 +10,15 @@ import com.slack.api.methods.SlackApiException;
 import com.slack.api.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -35,7 +38,7 @@ public class SlackUserService {
             OrgSaaS orgSaaSObject = orgSaaSRepo.findById(workspace_config_id)
                     .orElseThrow(() -> new IllegalArgumentException("OrgSaas not found with spaceId: " + workspace_config_id));
             try {
-                slackUsers = slackApiService.fetchUsers(workspace_config_id);
+                slackUsers = slackApiService.fetchUsers(workspace_config_id).stream().filter(user -> !user.isBot()).collect(Collectors.toList());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } catch (SlackApiException e) {
@@ -65,5 +68,29 @@ public class SlackUserService {
                 slackUserRepo.save(monitoredUser);
             }
         });
+    }
+
+
+    // 쿼리문 사용할때 네이티브 쿼리면 DTO에 직접 매핑시켜줘야함
+    // JPQL이면 DTO에 매핑시켜줄 필요 없음
+    public List<TopUserDTO> getTopUsers(int orgId, int saasId) {
+        try {
+            List<Object[]> results = slackUserRepo.findTopUsers(orgId, saasId);
+
+            return results.stream().map(result -> new TopUserDTO(
+                    (String) result[0],
+                    ((Number) result[1]).longValue(),
+                    ((Number) result[2]).longValue(),
+                    ((java.sql.Timestamp) result[3]).toLocalDateTime()
+            )).collect(Collectors.toList());
+
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error retrieving top users", e);
+        }
+    }
+
+    @Async("threadPoolTaskExecutor")
+    public CompletableFuture<List<TopUserDTO>> getTopUsersAsync(int orgId, int saasId) {
+        return CompletableFuture.supplyAsync(() -> getTopUsers(orgId, saasId));
     }
 }

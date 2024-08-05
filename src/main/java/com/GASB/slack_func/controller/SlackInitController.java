@@ -22,13 +22,12 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/api/v1/connect/slack")
+@RequestMapping("/api/v1/connect/slack/")
 public class SlackInitController {
 
     private final SlackChannelService slackChannelService;
     private final SlackUserService slackUserService;
     private final SlackFileService slackFileService;
-//    private final SlackOAuthService slackOAuthService;
     private final AdminRepo adminRepo;
 
     // 원래 여기서 AOP던 뭐던 인증을 통해서 요청한 클라이언트의 값을 받아옴
@@ -103,65 +102,4 @@ public class SlackInitController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
-//    @GetMapping("/login")
-//    public RedirectView login() {
-//        String botScopes = String.join(",", new String[]{
-//                "chat:write",
-//                "files:read",
-//                "files:write",
-//                "im:write"
-//        });
-//
-//        String userScopes = String.join(",", new String[]{
-//                "channels:history",
-//                "channels:read",
-//                "channels:write",
-//                "files:read",
-//                "files:write",
-//                "groups:history",
-//                "groups:read",
-//                "groups:write",
-//                "im:history",
-//                "im:read",
-//                "im:write",
-//                "links:read",
-//                "mpim:history",
-//                "mpim:read",
-//                "team:read",
-//                "usergroups:read",
-//                "users:read",
-//                "users:read.email"
-//        });
-//
-//        String url = "https://slack.com/oauth/v2/authorize?client_id=" + slackOAuthService.getClientId() +
-//                "&scope=" + botScopes +
-//                "&user_scope=" + userScopes +
-//                "&redirect_uri=" + slackOAuthService.getRedirectUri();
-//        return new RedirectView(url);
-//    }
-//
-//    @GetMapping("/callback")
-//    public ResponseEntity<Map<String, String>> callback(@RequestParam String code) {
-//        Map<String, String> response = new HashMap<>();
-//        try {
-//            log.info("Authorization code received: {}", code); // 인증 코드 확인
-//            Map<String, String> tokenResponse = slackOAuthService.getAccessToken(code);
-//            if (tokenResponse != null && "ok".equals(tokenResponse.get("ok"))) {
-//                String accessToken = tokenResponse.get("access_token");
-//                response.put("status", "success");
-//                response.put("access_token", accessToken);
-//                return ResponseEntity.ok(response);
-//            } else {
-//                response.put("status", "error");
-//                response.put("message", "Error fetching access token: " + tokenResponse);
-//                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//            }
-//        } catch (Exception e) {
-//            response.put("status", "error");
-//            response.put("message", "Error fetching access token");
-//            log.error("Error fetching access token", e);
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//        }
-//    }
 }
