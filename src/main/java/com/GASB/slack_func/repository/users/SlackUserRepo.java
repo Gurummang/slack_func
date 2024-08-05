@@ -15,6 +15,10 @@ public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long> , Sla
 
     boolean existsByUserId(String userId);
 
+
+    //DISTINCT : 중복된 값을 제거하는 키워드이다.
+    //근데 JPQL 에서는 DISTINCT를 사용할 수 없다.
+    // 그래서 nativeQuery = true로 설정하고 사용한다.
     @Query(nativeQuery = true, value =
             "SELECT " +
                     "    u.user_name AS userName, " +
@@ -40,5 +44,4 @@ public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long> , Sla
                     "    (3 * COUNT(DISTINCT CASE WHEN vr.threat_label != 'none' THEN fu.id END) + COUNT(DISTINCT CASE WHEN dr.dlp = TRUE THEN fu.id END)) DESC " +
                     "LIMIT 5")
     List<Object[]> findTopUsers(@Param("orgId") int orgId, @Param("saasId") int saasId);
-
 }

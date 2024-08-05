@@ -88,4 +88,9 @@ public class SlackUserService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error retrieving top users", e);
         }
     }
+
+    @Async("threadPoolTaskExecutor")
+    public CompletableFuture<List<TopUserDTO>> getTopUsersAsync(int orgId, int saasId) {
+        return CompletableFuture.supplyAsync(() -> getTopUsers(orgId, saasId));
+    }
 }

@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequiredArgsConstructor
@@ -92,7 +93,9 @@ public class SlackBoardController {
             String email = request.getEmail();
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
             Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
-            List<TopUserDTO> topuser = slackUserService.getTopUsers(orgId, saasObject.getId().intValue());
+            CompletableFuture<List<TopUserDTO>> future = slackUserService.getTopUsersAsync(orgId, saasObject.getId().intValue());
+            List<TopUserDTO> topuser = future.get();
+
             return ResponseEntity.ok(topuser);
         } catch (Exception e) {
             log.error("Error fetching recent files", e);
