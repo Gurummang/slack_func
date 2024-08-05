@@ -61,4 +61,12 @@ public class SlackEventController {
         return ResponseEntity.ok("User Event received and logged");
     }
 
+    @PostMapping("/file-deleted")
+    public ResponseEntity<String> handleFileDeletedEvent(@RequestBody Map<String, Object> payload) {
+        // Log the received event payload
+        log.info("Received event payload: {}", payload);
+        slackFileEvent.handleFileDeletedEvent(payload);
+        return ResponseEntity.ok("File Deleted Event received and logged");
+    }
+
 }

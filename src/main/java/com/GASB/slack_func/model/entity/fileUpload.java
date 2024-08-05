@@ -31,4 +31,8 @@ public class fileUpload {
 
     @Column(name = "upload_ts", nullable = false)
     private LocalDateTime timestamp;
+
+    @Column(name = "deleted")
+    @Builder.Default
+    private boolean deleted = false;
 }

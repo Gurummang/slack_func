@@ -2,7 +2,9 @@ package com.GASB.slack_func.repository.files;
 
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
 import com.GASB.slack_func.model.entity.fileUpload;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -24,6 +26,10 @@ public interface FileUploadRepository extends JpaRepository<fileUpload, Long> {
     List<SlackRecentFileDTO> findRecentFilesByOrgIdAndSaasId(@Param("orgId") int orgId, @Param("saasId") int saasId);
 
     // Corrected method to find by OrgSaaS fields
+    @Modifying
+    @Transactional
+    @Query("UPDATE fileUpload fu SET fu.deleted = true WHERE fu.orgSaaS.id = :orgSaaSId AND fu.saasFileId = :saasFileId")
+    void markFileAsDeleted(@Param("orgSaaSId") int orgSaaSId, @Param("saasFileId") String saasFileId);
 
     Optional<fileUpload> findBySaasFileIdAndTimestamp(String saasFileId, LocalDateTime timestamp);
 }
