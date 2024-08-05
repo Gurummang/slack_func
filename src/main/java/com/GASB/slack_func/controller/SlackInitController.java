@@ -4,7 +4,6 @@ import com.GASB.slack_func.annotation.SlackInitGroup;
 import com.GASB.slack_func.configuration.ExtractData;
 import com.GASB.slack_func.repository.org.AdminRepo;
 import com.GASB.slack_func.service.SlackChannelService;
-import com.GASB.slack_func.service.SlackOAuth.SlackOAuthService;
 import com.GASB.slack_func.service.SlackUserService;
 import com.GASB.slack_func.service.file.SlackFileService;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +28,6 @@ public class SlackInitController {
     private final SlackChannelService slackChannelService;
     private final SlackUserService slackUserService;
     private final SlackFileService slackFileService;
-    private final SlackOAuthService slackOAuthService;
     private final AdminRepo adminRepo;
 
     // 원래 여기서 AOP던 뭐던 인증을 통해서 요청한 클라이언트의 값을 받아옴
@@ -99,56 +99,6 @@ public class SlackInitController {
             response.put("status", "error");
             response.put("message", "Error fetching all data");
             log.error("Error fetching all data", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-    }
-
-    @GetMapping("/login")
-    public RedirectView login() {
-        String scopes = String.join(",", new String[]{
-                "channels:history",
-                "channels:read",
-                "channels:write",
-                "chat:write",
-                "files:read",
-                "files:write",
-                "groups:history",
-                "groups:read",
-                "groups:write",
-                "im:history",
-                "im:read",
-                "im:write",
-                "links:read",
-                "mpim:history",
-                "mpim:read",
-                "team:read",
-                "usergroups:read",
-                "users:read",
-                "users:read.email"
-        });
-        String url = "https://slack.com/oauth/v2/authorize?client_id=" + slackOAuthService.getClientId() + "&scope=" + scopes + "&redirect_uri=" + slackOAuthService.getRedirectUri();
-        return new RedirectView(url);
-    }
-
-    @GetMapping("/callback")
-    public ResponseEntity<Map<String, String>> callback(@RequestParam String code) {
-        Map<String, String> response = new HashMap<>();
-        try {
-            Map<String, String> tokenResponse = slackOAuthService.getAccessToken(code);
-            if (tokenResponse != null && "ok".equals(tokenResponse.get("ok"))) {
-                String accessToken = tokenResponse.get("access_token");
-                response.put("status", "success");
-                response.put("access_token", accessToken);
-                return ResponseEntity.ok(response);
-            } else {
-                response.put("status", "error");
-                response.put("message", "Error fetching access token: " + tokenResponse);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-            }
-        } catch (Exception e) {
-            response.put("status", "error");
-            response.put("message", "Error fetching access token");
-            log.error("Error fetching access token", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }

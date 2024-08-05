@@ -2,6 +2,7 @@ package com.GASB.slack_func.controller;
 
 import com.GASB.slack_func.annotation.SlackBoardGroup;
 import com.GASB.slack_func.configuration.ExtractData;
+import com.GASB.slack_func.model.dto.TopUserDTO;
 import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
@@ -9,6 +10,7 @@ import com.GASB.slack_func.model.entity.Saas;
 import com.GASB.slack_func.repository.org.AdminRepo;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.org.SaasRepo;
+import com.GASB.slack_func.service.SlackUserService;
 import com.GASB.slack_func.service.file.SlackFileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequiredArgsConstructor
@@ -34,6 +37,7 @@ public class SlackBoardController {
     private final SaasRepo saasRepo;
     private final AdminRepo adminRepo;
     private final SlackFileService fileService;
+    private final SlackUserService slackUserService;
 
     @PostMapping("/files/size")
     public ResponseEntity<SlackFileSizeDto> fetchFileSize(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request){
@@ -80,6 +84,23 @@ public class SlackBoardController {
             log.error("Error fetching recent files", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonList(new SlackRecentFileDTO("Error", "Server Error", "N/A", LocalDateTime.now())));
+        }
+    }
+
+    @PostMapping("/user-ranking")
+    public ResponseEntity<List<TopUserDTO>> fetchUserRanking(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request) {
+        try {
+            String email = request.getEmail();
+            int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
+            Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
+            CompletableFuture<List<TopUserDTO>> future = slackUserService.getTopUsersAsync(orgId, saasObject.getId().intValue());
+            List<TopUserDTO> topuser = future.get();
+
+            return ResponseEntity.ok(topuser);
+        } catch (Exception e) {
+            log.error("Error fetching recent files", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonList(new TopUserDTO("Error", 0L, 0L, LocalDateTime.now())));
         }
     }
 
