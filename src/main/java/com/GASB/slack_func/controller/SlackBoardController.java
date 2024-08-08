@@ -50,7 +50,7 @@ public class SlackBoardController {
         try{
             String email = (String) servletRequest.getAttribute("email");
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
-            SlackFileSizeDto slackFileSizeDto = slackFileService.SumOfSlackFileSize(orgId,1);
+            SlackFileSizeDto slackFileSizeDto = slackFileService.sumOfSlackFileSize(orgId,1);
             return ResponseEntity.ok(slackFileSizeDto);
         } catch (Exception e) {
             // log.error("Error fetching file size", e);

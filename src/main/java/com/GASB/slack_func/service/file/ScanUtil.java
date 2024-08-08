@@ -1,7 +1,7 @@
 package com.GASB.slack_func.service.file;
 
 import com.GASB.slack_func.model.entity.TypeScan;
-import com.GASB.slack_func.model.entity.fileUpload;
+import com.GASB.slack_func.model.entity.FileUploadTable;
 import com.GASB.slack_func.repository.files.TypeScanRepo;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ public class ScanUtil {
     private final TypeScanRepo typeScanRepo;
     
     @Async
-    public void scanFile(String path, fileUpload fileUploadObject, String MIMEType, String Extension) {
+    public void scanFile(String path, FileUploadTable fileUploadTableObject, String MIMEType, String Extension) {
         try {
             File inputFile = new File(path);
             if (!inputFile.exists() || !inputFile.isFile()) {
@@ -40,17 +40,17 @@ public class ScanUtil {
             if (fileExtension.equals("txt")) {
                 // txt 파일의 경우 시그니처가 없으므로 MIME 타입만으로 검증
                 isMatched = mimeType.equals(expectedMimeType);
-                addData(fileUploadObject, isMatched, mimeType, "unknown", fileExtension);
+                addData(fileUploadTableObject, isMatched, mimeType, "unknown", fileExtension);
             } else {
                 fileSignature = getFileSignature(inputFile, fileExtension);
                 if (fileSignature == null || fileSignature.isEmpty()) {
                     // 확장자와 MIME 타입만 존재하는 경우
                     isMatched = checkWithoutSignature(mimeType, expectedMimeType, fileExtension);
-                    addData(fileUploadObject, isMatched, mimeType, "unknown", fileExtension);
+                    addData(fileUploadTableObject, isMatched, mimeType, "unknown", fileExtension);
                 } else {
                     // MIME 타입, 확장자, 시그니처가 모두 존재하는 경우
                     isMatched = checkAllType(mimeType, fileExtension, fileSignature, expectedMimeType);
-                    addData(fileUploadObject, isMatched, mimeType, fileSignature, fileExtension);
+                    addData(fileUploadTableObject, isMatched, mimeType, fileSignature, fileExtension);
                 }
             }
         } catch (IOException e) {
@@ -60,14 +60,14 @@ public class ScanUtil {
 
     @Async
     @Transactional
-    protected void addData(fileUpload fileUploadObject, boolean correct, String mimeType, String signature, String extension) {
-        if (fileUploadObject == null || fileUploadObject.getId() == null) {
+    protected void addData(FileUploadTable fileUploadTableObject, boolean correct, String mimeType, String signature, String extension) {
+        if (fileUploadTableObject == null || fileUploadTableObject.getId() == null) {
 //            log.error("Invalid file upload object: {}, {}", fileUploadObject, fileUploadObject.getId());
 
             throw new IllegalArgumentException("Invalid file upload object");
         }
         TypeScan typeScan = TypeScan.builder()
-                .file_upload(fileUploadObject)
+                .file_upload(fileUploadTableObject)
                 .correct(correct)
                 .mimetype(mimeType)
                 .signature(signature)
@@ -120,13 +120,13 @@ public class ScanUtil {
     private boolean checkAllType(String mimeType, String extension, String signature, String expectedMimeType) {
         log.info("Checking all types: mimeType={}, extension={}, signature={}, expectedMimeType={}", mimeType, extension, signature, expectedMimeType);
         return mimeType.equals(expectedMimeType) &&
-                MimeType.MimeMatch(mimeType, signature) &&
-                MimeType.MimeMatch(mimeType, extension);
+                MimeType.mimeMatch(mimeType, signature) &&
+                MimeType.mimeMatch(mimeType, extension);
     }
 
     private boolean checkWithoutSignature(String mimeType, String expectedMimeType, String extension) {
         return mimeType.equals(expectedMimeType) &&
-                MimeType.MimeMatch(mimeType, extension);
+                MimeType.mimeMatch(mimeType, extension);
     }
 
 }

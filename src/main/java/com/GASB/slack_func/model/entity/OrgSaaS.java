@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.Collections;
 import java.util.List;
 
 @Entity
@@ -42,4 +43,9 @@ public class OrgSaaS {
 
     @OneToOne(mappedBy = "orgSaas", cascade = CascadeType.ALL)
     private WorkspaceConfig config;
+
+    // 복사본을 반환하도록 수정
+    public List<ChannelList> getChannels() {
+        return Collections.unmodifiableList(channels);
+    }
 }

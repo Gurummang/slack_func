@@ -71,7 +71,7 @@ public class SlackApiService {
 
     // conversations.info API호출 메서드
     public Conversation fetchConversationInfo(String channelId, OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
-        token = fileUtil.TokenSelector(orgSaaSObject);
+        token = fileUtil.tokenSelector(orgSaaSObject);
         com.slack.api.methods.response.conversations.ConversationsInfoResponse conversationsInfoResponse = slack.methods(token).conversationsInfo(r -> r.channel(channelId));
         if (conversationsInfoResponse.isOk()) {
             return conversationsInfoResponse.getChannel();
@@ -82,7 +82,7 @@ public class SlackApiService {
 
     // users.info API호출 메서드
     public User fetchUserInfo(String userId, OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
-        token = fileUtil.TokenSelector(orgSaaSObject);
+        token = fileUtil.tokenSelector(orgSaaSObject);
         com.slack.api.methods.response.users.UsersInfoResponse usersInfoResponse = slack.methods(token).usersInfo(r -> r.user(userId));
         if (usersInfoResponse.isOk()) {
             return usersInfoResponse.getUser();

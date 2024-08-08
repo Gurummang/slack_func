@@ -1,7 +1,6 @@
 package com.GASB.slack_func.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,8 +10,6 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @Table(name = "activities")
 public class Activities {
     @Id
@@ -37,4 +34,14 @@ public class Activities {
 
     @Column(name = "upload_channel", length = 100)
     private String uploadChannel;
+
+    @Builder
+    public Activities(MonitoredUsers user, String eventType, String saasFileId, String fileName, LocalDateTime eventTs, String uploadChannel) {
+        this.user = user;
+        this.eventType = eventType;
+        this.saasFileId = saasFileId;
+        this.fileName = fileName;
+        this.eventTs = eventTs;
+        this.uploadChannel = uploadChannel;
+    }
 }

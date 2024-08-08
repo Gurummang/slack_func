@@ -1,6 +1,5 @@
 package com.GASB.slack_func.controller;
 
-
 import com.GASB.slack_func.service.event.SlackChannelEvent;
 import com.GASB.slack_func.service.event.SlackFileEvent;
 import com.GASB.slack_func.service.event.SlackUserEvent;
@@ -19,7 +18,6 @@ import java.util.Map;
 @Slf4j
 public class SlackEventController {
 
-    
     private final SlackFileEvent slackFileEvent;
     private final SlackChannelEvent slackChannelEvent;
     private final SlackUserEvent slackUserEvent;
@@ -35,6 +33,7 @@ public class SlackEventController {
     public ResponseEntity<String> handleEvent(@RequestBody Map<String, Object> payload) {
         return ResponseEntity.ok("Event received and logged");
     }
+
     @PostMapping("/file-shared")
     public ResponseEntity<String> handleFileEvent(@RequestBody Map<String, Object> payload) {
         slackFileEvent.handleFileEvent(payload);
@@ -52,5 +51,4 @@ public class SlackEventController {
         slackUserEvent.handleUserEvent(payload);
         return ResponseEntity.ok("User Event received and logged");
     }
-
 }

@@ -87,7 +87,7 @@ public class SlackFileService {
         Long totalDlpFileSize = storedFilesRepository.getTotalDlpFileSize(orgId, saasId);
         return totalDlpFileSize != null ? totalDlpFileSize : 0L; // null 반환 방지
     }
-    public SlackFileSizeDto SumOfSlackFileSize(int orgId, int saasId) {
+    public SlackFileSizeDto sumOfSlackFileSize(int orgId, int saasId) {
         return SlackFileSizeDto.builder()
                 .totalSize((float) getTotalFileSize(orgId,saasId) / 1073741824)
                 .sensitiveSize((float) getTotalDlpFileSize(orgId,saasId) / 1073741824)

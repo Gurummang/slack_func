@@ -29,7 +29,7 @@ public class SlackFileMapper {
         return StoredFile.builder()
                 .type(file.getFiletype())
                 .size(file.getSize())
-                .SavePath(bucketName + "/" + filePath)
+                .savePath(bucketName + "/" + filePath)
                 .saltedHash(hash)
                 .build();
     }
@@ -39,11 +39,11 @@ public class SlackFileMapper {
                 .collect(Collectors.toList());
     }
 
-    public fileUpload toFileUploadEntity(File file, OrgSaaS orgSaas, String hash) {
+    public FileUploadTable toFileUploadEntity(File file, OrgSaaS orgSaas, String hash) {
         if (file == null) {
             return null;
         }
-        return fileUpload.builder()
+        return FileUploadTable.builder()
                 .orgSaaS(orgSaas)
                 .saasFileId(file.getId())
                 .hash(hash)

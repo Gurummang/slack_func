@@ -1,7 +1,6 @@
 package com.GASB.slack_func.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,11 +9,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "file_upload")
-public class fileUpload {
+public class FileUploadTable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,4 +28,12 @@ public class fileUpload {
 
     @Column(name = "upload_ts", nullable = false)
     private LocalDateTime timestamp;
+
+    @Builder
+    public FileUploadTable(OrgSaaS orgSaaS, String saasFileId, String hash, LocalDateTime timestamp) {
+        this.orgSaaS = orgSaaS;
+        this.saasFileId = saasFileId;
+        this.hash = hash;
+        this.timestamp = timestamp;
+    }
 }
