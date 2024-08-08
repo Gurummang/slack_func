@@ -52,7 +52,7 @@ public class SlackFileMapper {
     }
 
 
-    public Activities toActivityEntity(File file, String eventType, MonitoredUsers user) {
+    public Activities toActivityEntity(File file, String eventType, MonitoredUsers user, String channel) {
         if (file == null) {
             return null;
         }
@@ -62,7 +62,7 @@ public class SlackFileMapper {
                 .saasFileId(file.getId())
                 .fileName(file.getTitle())
                 .eventTs(LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.systemDefault()))
-                .uploadChannel(file.getChannels().isEmpty() ? null : file.getChannels().get(0))
+                .uploadChannel(file.getChannels().isEmpty() ? null : channel)
                 .build();
     }
 }

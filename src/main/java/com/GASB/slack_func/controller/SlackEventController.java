@@ -19,10 +19,10 @@ import java.util.Map;
 @Slf4j
 public class SlackEventController {
 
+    
     private final SlackFileEvent slackFileEvent;
     private final SlackChannelEvent slackChannelEvent;
     private final SlackUserEvent slackUserEvent;
-
 
     @Autowired
     public SlackEventController(SlackFileEvent slackFileEvent, SlackChannelEvent slackChannelEvent, SlackUserEvent slackUserEvent) {
@@ -33,30 +33,22 @@ public class SlackEventController {
 
     @PostMapping("/")
     public ResponseEntity<String> handleEvent(@RequestBody Map<String, Object> payload) {
-        // Log the received event payload
-        log.info("Received event payload: {}", payload);
         return ResponseEntity.ok("Event received and logged");
     }
     @PostMapping("/file-shared")
     public ResponseEntity<String> handleFileEvent(@RequestBody Map<String, Object> payload) {
-        // Log the received event payload
-        log.info("Received event payload: {}", payload);
         slackFileEvent.handleFileEvent(payload);
         return ResponseEntity.ok("File Event received and logged");
     }
 
     @PostMapping("/channel-created")
     public ResponseEntity<String> handleMessageEvent(@RequestBody Map<String, Object> payload) {
-        // Log the received event payload
-        log.info("Received event payload: {}", payload);
         slackChannelEvent.handleChannelEvent(payload);
         return ResponseEntity.ok("Event received and logged");
     }
 
     @PostMapping("/user-joined")
     public ResponseEntity<String> handleUserEvent(@RequestBody Map<String, Object> payload) {
-        // Log the received event payload
-        log.info("Received event payload: {}", payload);
         slackUserEvent.handleUserEvent(payload);
         return ResponseEntity.ok("User Event received and logged");
     }
