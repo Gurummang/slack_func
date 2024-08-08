@@ -1,8 +1,6 @@
 package com.GASB.slack_func.controller;
 
 import com.GASB.slack_func.annotation.JWT.ValidateJWT;
-import com.GASB.slack_func.annotation.SlackBoardGroup;
-import com.GASB.slack_func.configuration.ExtractData;
 import com.GASB.slack_func.model.dto.TopUserDTO;
 import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
@@ -18,8 +16,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -38,14 +37,12 @@ public class SlackBoardController {
     private final SlackFileService fileService;
     private final SlackUserService slackUserService;
 
-    @PostMapping("/files/size")
-    public ResponseEntity<SlackFileSizeDto> fetchFileSize(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request){
+    @GetMapping("/files/size")
+    @ValidateJWT
+    public ResponseEntity<SlackFileSizeDto> fetchFileSize(HttpServletRequest servletRequest){
         try{
-            String email = request.getEmail();
+            String email = (String) servletRequest.getAttribute("email");
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
-
-//            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(orgId,saasRepo.findBySaasName("Slack").orElse(null));
-//            log.info("orgSaaSList: {}", orgSaaSList);
             SlackFileSizeDto slackFileSizeDto = slackFileService.SumOfSlackFileSize(orgId,1);
             return ResponseEntity.ok(slackFileSizeDto);
         } catch (Exception e) {
@@ -62,8 +59,6 @@ public class SlackBoardController {
             String email = (String) servletRequest.getAttribute("email");
             log.info("httpServletRequest: {}", servletRequest);
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
-//            Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
-//            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(orgId,saasObject);
             SlackFileCountDto slackFileCountDto = slackFileService.testCountSum(orgId,1);
             return ResponseEntity.ok(slackFileCountDto);
         } catch (Exception e) {
@@ -72,10 +67,11 @@ public class SlackBoardController {
                     .body(new SlackFileCountDto(0,0,0,0));
         }
     }
-    @PostMapping("/files/recent")
-    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request) {
+    @GetMapping("/files/recent")
+    @ValidateJWT
+    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles(HttpServletRequest servletRequest) {
         try {
-            String email = request.getEmail();
+            String email = (String) servletRequest.getAttribute("email");
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
             Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
             List<SlackRecentFileDTO> recentFiles = fileService.slackRecentFiles(orgId, saasObject.getId().intValue());
@@ -87,10 +83,11 @@ public class SlackBoardController {
         }
     }
 
-    @PostMapping("/user-ranking")
-    public ResponseEntity<List<TopUserDTO>> fetchUserRanking(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request) {
+    @GetMapping("/user-ranking")
+    @ValidateJWT
+    public ResponseEntity<List<TopUserDTO>> fetchUserRanking(HttpServletRequest servletRequest) {
         try {
-            String email = request.getEmail();
+            String email = (String) servletRequest.getAttribute("email");
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
             Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
             CompletableFuture<List<TopUserDTO>> future = slackUserService.getTopUsersAsync(orgId, saasObject.getId().intValue());

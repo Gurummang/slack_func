@@ -35,7 +35,7 @@ public class JWTValidationAspect {
         String jwtToken = null;
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if ("jwtToken".equals(cookie.getName())) {
+                if ("jwt".equals(cookie.getName())) {
                     jwtToken = cookie.getValue();
                     break;
                 }
