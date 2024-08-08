@@ -27,6 +27,7 @@ public class SlackChannelService {
     private final SlackChannelRepository slackChannelRepository;
     private final OrgSaaSRepo orgSaaSRepo;
     private final FileUtil fileUtil;
+    
 
     @Async("threadPoolTaskExecutor")
     public CompletableFuture<Void> slackFirstChannels(int workspace_config_id) {

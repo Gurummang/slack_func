@@ -8,8 +8,6 @@ import java.sql.Timestamp;
 @Entity
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @Table(name="admin")
 public class AdminUsers {
     @Id
@@ -26,15 +24,25 @@ public class AdminUsers {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Setter
+
     @Column(name = "first_name", length = 50)
     private String firstName;
 
-    @Setter
+
     @Column(name = "last_name", length = 50)
     private String lastName;
 
-    @Setter
+
     @Column(name = "last_login")
     private Timestamp lastLogin;
+
+    @Builder
+    public AdminUsers(Org org, String email, String password, String firstName, String lastName, Timestamp lastLogin) {
+        this.org = org;
+        this.email = email;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.lastLogin = lastLogin;
+    }
 }

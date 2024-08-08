@@ -15,6 +15,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SlackUserEvent {
 
+    
     private final SlackApiService slackApiService;
     private final SlackUserService slackUserService;
     private final OrgSaaSRepo orgSaaSRepo;

@@ -7,13 +7,12 @@ import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
 import com.GASB.slack_func.model.entity.Saas;
 import com.GASB.slack_func.repository.org.AdminRepo;
-import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.org.SaasRepo;
 import com.GASB.slack_func.service.SlackUserService;
 import com.GASB.slack_func.service.file.SlackFileService;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,16 +25,24 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
-@RequiredArgsConstructor
 @Slf4j
 @RequestMapping("/api/v1/board/slack")
 public class SlackBoardController {
     private final SlackFileService slackFileService;
-    private final OrgSaaSRepo  orgSaaSRepo;
     private final SaasRepo saasRepo;
     private final AdminRepo adminRepo;
     private final SlackFileService fileService;
     private final SlackUserService slackUserService;
+
+    @Autowired
+    public SlackBoardController(SlackFileService slackFileService, SaasRepo saasRepo, AdminRepo adminRepo, SlackFileService fileService, SlackUserService slackUserService) {
+        this.slackFileService = slackFileService;
+        this.saasRepo = saasRepo;
+        this.adminRepo = adminRepo;
+        this.fileService = fileService;
+        this.slackUserService = slackUserService;
+    }
+    
 
     @GetMapping("/files/size")
     @ValidateJWT
@@ -46,7 +53,7 @@ public class SlackBoardController {
             SlackFileSizeDto slackFileSizeDto = slackFileService.SumOfSlackFileSize(orgId,1);
             return ResponseEntity.ok(slackFileSizeDto);
         } catch (Exception e) {
-            log.error("Error fetching file size", e);
+            // log.error("Error fetching file size", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new SlackFileSizeDto(0,0,0));
         }
@@ -57,12 +64,12 @@ public class SlackBoardController {
     public ResponseEntity<SlackFileCountDto> fetchFileCount(HttpServletRequest servletRequest){
         try{
             String email = (String) servletRequest.getAttribute("email");
-            log.info("httpServletRequest: {}", servletRequest);
+            // log.info("httpServletRequest: {}", servletRequest);
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
             SlackFileCountDto slackFileCountDto = slackFileService.testCountSum(orgId,1);
             return ResponseEntity.ok(slackFileCountDto);
         } catch (Exception e) {
-            log.error("Error fetching file count", e);
+            // log.error("Error fetching file count", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new SlackFileCountDto(0,0,0,0));
         }
@@ -77,7 +84,7 @@ public class SlackBoardController {
             List<SlackRecentFileDTO> recentFiles = fileService.slackRecentFiles(orgId, saasObject.getId().intValue());
             return ResponseEntity.ok(recentFiles);
         } catch (Exception e) {
-            log.error("Error fetching recent files", e);
+            // log.error("Error fetching recent files", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonList(new SlackRecentFileDTO("Error", "Server Error", "N/A", LocalDateTime.now())));
         }
@@ -94,8 +101,12 @@ public class SlackBoardController {
             List<TopUserDTO> topuser = future.get();
 
             return ResponseEntity.ok(topuser);
+        } catch (RuntimeException e){
+            // log.error("Error fetching recent files", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonList(new TopUserDTO("Error", 0L, 0L, LocalDateTime.now())));
         } catch (Exception e) {
-            log.error("Error fetching recent files", e);
+            // log.error("Error fetching recent files", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonList(new TopUserDTO("Error", 0L, 0L, LocalDateTime.now())));
         }

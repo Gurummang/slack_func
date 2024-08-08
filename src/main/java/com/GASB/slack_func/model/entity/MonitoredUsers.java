@@ -7,10 +7,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Getter
-@Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @Table(name = "monitored_users")
 public class MonitoredUsers {
 //    @Id
@@ -34,4 +31,13 @@ public class MonitoredUsers {
     @Column(name = "status")
     private Timestamp timestamp;
     //이것도 타임스탬프로 해야하나
+
+    @Builder
+    public MonitoredUsers(String userId, OrgSaaS orgSaaS, String email, String userName, Timestamp timestamp) {
+        this.userId = userId;
+        this.orgSaaS = orgSaaS;
+        this.email = email;
+        this.userName = userName;
+        this.timestamp = timestamp;
+    }
 }

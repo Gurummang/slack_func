@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @RequiredArgsConstructor
 public class FileUtil {
-
+    
     private final SlackFileRepository storedFilesRepository;
     private final FileUploadRepository fileUploadRepository;
     private final FileActivityRepo activitiesRepository;
@@ -134,8 +134,8 @@ public class FileUtil {
 
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
         fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash);
-        Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user);
-        activity.setUploadChannel(uploadedChannelPath);
+        Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user,uploadedChannelPath);
+//        activity.setUploadChannel(uploadedChannelPath);
 
 
         synchronized (this) {
@@ -202,16 +202,29 @@ public class FileUtil {
     }
 
     private String saveFileToLocal(byte[] fileData, String saasName, String workspaceName, String channelName, String hash, String fileName) throws IOException {
+        // 입력된 값이 null이 아닌지 확인
+        if (fileData == null || saasName == null || workspaceName == null || channelName == null || hash == null || fileName == null) {
+            throw new IllegalArgumentException("None of the input parameters can be null");
+        }
+
+        // 경로 세그먼트 정리
         saasName = sanitizePathSegment(saasName);
         workspaceName = sanitizePathSegment(workspaceName);
-//        channelName = sanitizePathSegment(channelName);
+        channelName = sanitizePathSegment(channelName);
+        hash = sanitizePathSegment(hash);
         fileName = sanitizeFileName(fileName);
 
+        // 기본 경로 설정
         Path basePath = Paths.get("downloaded_files");
         Path filePath = basePath.resolve(Paths.get(saasName, workspaceName, channelName, hash, fileName));
 
+        // 상위 디렉토리 생성
         Files.createDirectories(filePath.getParent());
+
+        // 파일 쓰기
         Files.write(filePath, fileData);
+
+        // 파일 경로 반환
         return filePath.toString();
     }
 

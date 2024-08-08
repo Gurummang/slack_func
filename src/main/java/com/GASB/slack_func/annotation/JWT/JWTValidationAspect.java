@@ -2,11 +2,10 @@ package com.GASB.slack_func.annotation.JWT;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -17,13 +16,17 @@ import org.springframework.web.client.RestTemplate;
 
 @Aspect
 @Component
-@RequiredArgsConstructor
+@Slf4j
 public class JWTValidationAspect {
-
-    private static final Logger log = LoggerFactory.getLogger(JWTValidationAspect.class);
 
     private final HttpServletRequest servletRequest;
     private final RestTemplate restTemplate;
+
+    @Autowired
+    public JWTValidationAspect(HttpServletRequest servletRequest, RestTemplate restTemplate) {
+        this.servletRequest = servletRequest;
+        this.restTemplate = restTemplate;
+    }
 
     @Value("${auth.server.url}")
     private String authServerUrl;

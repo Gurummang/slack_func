@@ -21,7 +21,7 @@ public class ScanUtil {
 
     private final Tika tika;
     private final TypeScanRepo typeScanRepo;
-
+    
     @Async
     public void scanFile(String path, fileUpload fileUploadObject, String MIMEType, String Extension) {
         try {
@@ -62,7 +62,7 @@ public class ScanUtil {
     @Transactional
     protected void addData(fileUpload fileUploadObject, boolean correct, String mimeType, String signature, String extension) {
         if (fileUploadObject == null || fileUploadObject.getId() == null) {
-            log.error("Invalid file upload object: {}, {}", fileUploadObject, fileUploadObject.getId());
+//            log.error("Invalid file upload object: {}, {}", fileUploadObject, fileUploadObject.getId());
 
             throw new IllegalArgumentException("Invalid file upload object");
         }

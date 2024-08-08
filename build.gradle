@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.3.1'
 	id 'io.spring.dependency-management' version '1.1.5'
+	id "com.github.spotbugs" version "6.0.19"
 }
 
 group = 'com.GASB'
@@ -26,6 +27,8 @@ repositories {
 dependencies {
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+	spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
 
 	//database
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -76,4 +79,16 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+spotbugs {
+	toolVersion = '4.8.6'
+}
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+	reports {
+		xml.required.set(false)
+		html.required.set(true)
+		html.outputLocation.set(layout.buildDirectory.file("reports/spotbugs/main.html"))
+		html.stylesheet = 'fancy-hist.xsl'
+	}
+	jvmArgs = ['--add-opens', 'java.base/java.lang=ALL-UNNAMED']
 }
