@@ -1,5 +1,6 @@
 package com.GASB.slack_func.controller;
 
+import com.GASB.slack_func.annotation.JWT.ValidateJWT;
 import com.GASB.slack_func.annotation.SlackBoardGroup;
 import com.GASB.slack_func.configuration.ExtractData;
 import com.GASB.slack_func.model.dto.TopUserDTO;
@@ -12,15 +13,13 @@ import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.org.SaasRepo;
 import com.GASB.slack_func.service.SlackUserService;
 import com.GASB.slack_func.service.file.SlackFileService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -56,11 +55,12 @@ public class SlackBoardController {
         }
     }
 
-    @PostMapping("/files/count")
-    public ResponseEntity<SlackFileCountDto> fetchFileCount(@RequestBody @Validated(SlackBoardGroup.class) ExtractData request){
-
+    @GetMapping("/files/count")
+    @ValidateJWT
+    public ResponseEntity<SlackFileCountDto> fetchFileCount(HttpServletRequest servletRequest){
         try{
-            String email = request.getEmail();
+            String email = (String) servletRequest.getAttribute("email");
+            log.info("httpServletRequest: {}", servletRequest);
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
 //            Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
 //            List<OrgSaaS> orgSaaSList = orgSaaSRepo.findAllByOrgIdAndSaas(orgId,saasObject);
