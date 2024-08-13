@@ -4,13 +4,9 @@ import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
 import com.GASB.slack_func.model.entity.OrgSaaS;
-import com.GASB.slack_func.repository.AV.FileStatusRepository;
-import com.GASB.slack_func.repository.AV.VtReportRepository;
-import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
-import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.GASB.slack_func.service.SlackApiService;
 import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
@@ -31,15 +27,11 @@ public class SlackFileService {
     private final FileUtil fileUtil;
     private final FileUploadRepository fileUploadRepository;
     private final SlackFileRepository storedFilesRepository;
-    private final FileActivityRepo activitiesRepository;
-    private final SlackUserRepo slackUserRepo;
     private final OrgSaaSRepo orgSaaSRepo;
-    private final FileStatusRepository fileStatusRepository;
-    private final VtReportRepository vtReportRepository;
     
 
     @Transactional
-    public void fetchAndStoreFiles(int workspaceId) {
+    public void fetchAndStoreFiles(int workspaceId, String event_type) {
         try {
             OrgSaaS orgSaaSObject = orgSaaSRepo.findById(workspaceId).orElse(null);
             List<File> fileList = slackApiService.fetchFiles(workspaceId);
@@ -52,7 +44,7 @@ public class SlackFileService {
                     continue;
                 }
 
-                fileUtil.processAndStoreFile(file, orgSaaSObject, workspaceId);
+                fileUtil.processAndStoreFile(file, orgSaaSObject, workspaceId, event_type);
             }
         } catch (Exception e) {
             log.error("Error processing files", e);

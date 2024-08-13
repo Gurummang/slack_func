@@ -1,6 +1,9 @@
 package com.GASB.slack_func.service.event;
 
+import com.GASB.slack_func.mapper.SlackFileMapper;
+import com.GASB.slack_func.model.entity.Activities;
 import com.GASB.slack_func.model.entity.OrgSaaS;
+import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.service.SlackApiService;
 import com.GASB.slack_func.service.file.FileUtil;
@@ -21,8 +24,10 @@ public class SlackFileEvent {
     private final FileUtil fileService;
     private final SlackApiService slackApiService;
     private final OrgSaaSRepo orgSaaSRepo;
-    
-    public void handleFileEvent(Map<String, Object> payload) {
+    private final FileUploadRepository fileUploadRepository;
+    private final SlackFileMapper slackFileMapper;
+
+    public void handleFileEvent(Map<String, Object> payload, String event_type) {
         log.info("Handling file event with payload: {}", payload);
         try {
             String spaceId = payload.get("teamId").toString();
@@ -34,7 +39,7 @@ public class SlackFileEvent {
                 log.info("File is a quip or canvas file, skipping processing");
                 return;
             }
-            fileService.processAndStoreFile(fileInfo, orgSaaSObject, orgSaaSObject.getId());
+            fileService.processAndStoreFile(fileInfo, orgSaaSObject, orgSaaSObject.getId(), event_type);
 
             log.info("File event processed successfully for file ID: {}", fileInfo.getId());
         } catch (SlackApiException | IOException e) {
@@ -42,5 +47,17 @@ public class SlackFileEvent {
         } catch (Exception e) {
             log.error("Unexpected error processing file event", e);
         }
+    }
+
+    public void handleFileChangeEvent(Map<String, Object> payload) {
+    }
+
+    public void handleFileDeleteEvent(Map<String, Object> payload) {
+        // 1. activities 테이블에 deleted 이벤트로 추가
+        String file_id = payload.get("fileId").toString();
+        String user_id = payload.get("userId").toString();
+        Activities activities = slackFileMapper.toActivityEntitiyForDeleteEvent(file_id, "file_delete", user_id);
+        // 2. file_upload 테이블에서 deleted 컬럼을 true로 변경
+        fileUploadRepository.checkDelete(payload.get("fileId").toString());
     }
 }

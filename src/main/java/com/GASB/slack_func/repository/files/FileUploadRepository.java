@@ -26,4 +26,9 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
     // Corrected method to find by OrgSaaS fields
 
     Optional<FileUploadTable> findBySaasFileIdAndTimestamp(String saasFileId, LocalDateTime timestamp);
+
+    @Query("UPDATE FileUploadTable fu " +
+            "SET fu.deleted = true " +
+            "WHERE fu.saasFileId = :saasFileId")
+    void checkDelete(@Param("saasFileId") String saasFileId);
 }

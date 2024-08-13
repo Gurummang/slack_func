@@ -1,6 +1,7 @@
 package com.GASB.slack_func.mapper;
 
 import com.GASB.slack_func.model.entity.*;
+import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.slack.api.model.File;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +21,8 @@ public class SlackFileMapper {
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
+
+    private final SlackUserRepo slackUserRepo;
 
 
     public StoredFile toStoredFileEntity(File file, String hash, String filePath) {
@@ -63,6 +66,15 @@ public class SlackFileMapper {
                 .fileName(file.getTitle())
                 .eventTs(LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.systemDefault()))
                 .uploadChannel(file.getChannels().isEmpty() ? null : channel)
+                .build();
+    }
+
+    public Activities toActivityEntitiyForDeleteEvent(String file_id, String eventType, String user_id){
+        return Activities.builder()
+                .user(slackUserRepo.findByUserId(user_id).orElse(null))
+                .eventType(eventType)
+                .saasFileId(file_id)
+                .uploadChannel(null)
                 .build();
     }
 }

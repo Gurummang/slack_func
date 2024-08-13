@@ -75,14 +75,13 @@ public class SlackInitController {
         Map<String, String> response = new HashMap<>();
         int workspace_config_id = request.getWorkspace_config_id();
         try {
-            slackFileService.fetchAndStoreFiles(workspace_config_id);
+            slackFileService.fetchAndStoreFiles(workspace_config_id, "file_upload");
             response.put("status", "success");
             response.put("message", "Files saved successfully");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("status", "error");
             response.put("message", "Error fetching files");
-            // log.error("Error fetching files", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
@@ -95,7 +94,7 @@ public class SlackInitController {
         try {
             slackChannelService.slackFirstChannels(workspace_config_id); // 임시 org_saas_id
             slackUserService.slackFirstUsers(workspace_config_id);
-            slackFileService.fetchAndStoreFiles(workspace_config_id);
+            slackFileService.fetchAndStoreFiles(workspace_config_id, "file_upload");
             response.put("status", "success");
             response.put("message", "All data saved successfully");
             return ResponseEntity.ok(response);

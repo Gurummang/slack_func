@@ -52,7 +52,7 @@ public class SlackChannelService {
     @Async("threadPoolTaskExecutor")
     public CompletableFuture<Void> addChannel(Conversation conversation, OrgSaaS orgSaaS) {
         return CompletableFuture.runAsync(() -> {
-            ChannelList channel = slackChannelMapper.toEntity(conversation, orgSaaS);
+                ChannelList channel = slackChannelMapper.toEntity(conversation, orgSaaS);
             if (!slackChannelRepository.existsByChannelId(channel.getChannelId())) {
                 slackChannelRepository.save(channel);
             }

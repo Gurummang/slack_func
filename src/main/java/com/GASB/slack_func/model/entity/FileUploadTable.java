@@ -29,11 +29,15 @@ public class FileUploadTable {
     @Column(name = "upload_ts", nullable = false)
     private LocalDateTime timestamp;
 
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted;
+
     @Builder
-    public FileUploadTable(OrgSaaS orgSaaS, String saasFileId, String hash, LocalDateTime timestamp) {
+    public FileUploadTable(OrgSaaS orgSaaS, String saasFileId, String hash, LocalDateTime timestamp, boolean deleted) {
         this.orgSaaS = orgSaaS;
         this.saasFileId = saasFileId;
         this.hash = hash;
+        this.deleted = deleted;
         this.timestamp = timestamp;
     }
 }

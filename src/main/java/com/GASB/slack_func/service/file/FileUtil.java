@@ -13,7 +13,6 @@ import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -48,13 +47,12 @@ public class FileUtil {
     private final SlackFileMapper slackFileMapper;
     private final RestTemplate restTemplate;
     private final S3Client s3Client;
-    private final RabbitTemplate rabbitTemplate;
     private final WorkspaceConfigRepo worekSpaceRepo;
     private final ScanUtil scanUtil;
     private final MessageSender messageSender;
 
     @Autowired
-    public FileUtil(SlackFileRepository storedFilesRepository, FileUploadRepository fileUploadRepository, FileActivityRepo activitiesRepository, SlackUserRepo slackUserRepo, SlackChannelRepository slackChannelRepository, SlackFileMapper slackFileMapper, RestTemplate restTemplate, S3Client s3Client, RabbitTemplate rabbitTemplate, WorkspaceConfigRepo worekSpaceRepo, ScanUtil scanUtil, MessageSender messageSender) {
+    public FileUtil(SlackFileRepository storedFilesRepository, FileUploadRepository fileUploadRepository, FileActivityRepo activitiesRepository, SlackUserRepo slackUserRepo, SlackChannelRepository slackChannelRepository, SlackFileMapper slackFileMapper, RestTemplate restTemplate, S3Client s3Client, WorkspaceConfigRepo worekSpaceRepo, ScanUtil scanUtil, MessageSender messageSender) {
         this.storedFilesRepository = storedFilesRepository;
         this.fileUploadRepository = fileUploadRepository;
         this.activitiesRepository = activitiesRepository;
@@ -63,7 +61,6 @@ public class FileUtil {
         this.slackFileMapper = slackFileMapper;
         this.restTemplate = restTemplate;
         this.s3Client = s3Client;
-        this.rabbitTemplate = rabbitTemplate;
         this.worekSpaceRepo = worekSpaceRepo;
         this.scanUtil = scanUtil;
         this.messageSender = messageSender;
@@ -75,11 +72,11 @@ public class FileUtil {
 
     @Async("threadPoolTaskExecutor")
     @Transactional
-    public CompletableFuture<Void> processAndStoreFile(File file, OrgSaaS orgSaaSObject, int workspaceId) {
+    public CompletableFuture<Void> processAndStoreFile(File file, OrgSaaS orgSaaSObject, int workspaceId, String event_type) {
         return downloadFileAsync(file.getUrlPrivateDownload(), getToken(workspaceId))
                 .thenApply(fileData -> {
                     try {
-                        return handleFileProcessing(file, orgSaaSObject, fileData, workspaceId);
+                        return handleFileProcessing(file, orgSaaSObject, fileData, workspaceId, event_type);
                     } catch (IOException | NoSuchAlgorithmException e) {
                         throw new RuntimeException("File processing failed", e);
                     }
@@ -120,7 +117,7 @@ public class FileUtil {
         }
     }
 
-    private Void handleFileProcessing(File file, OrgSaaS orgSaaSObject, byte[] fileData, int workspaceId) throws IOException, NoSuchAlgorithmException {
+    private Void handleFileProcessing(File file, OrgSaaS orgSaaSObject, byte[] fileData, int workspaceId, String event_type) throws IOException, NoSuchAlgorithmException {
         String hash = calculateHash(fileData);
         String workspaceName = worekSpaceRepo.findById(workspaceId).get().getWorkspaceName();
 
@@ -145,8 +142,7 @@ public class FileUtil {
 
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
         FileUploadTable fileUploadTableObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash);
-        Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user,uploadedChannelPath);
-
+        Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath);
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
             if (activityDuplicate(activity)) {
