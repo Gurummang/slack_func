@@ -1,18 +1,16 @@
 package com.GASB.slack_func.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.Collections;
 import java.util.List;
 
 @Entity
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @Table(name = "saas")
 public class Saas {
     @Id
@@ -25,4 +23,14 @@ public class Saas {
     @OneToMany(mappedBy = "saas", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrgSaaS> orgSaaSList;
 
+    @Builder
+    public Saas(String saasName, List<OrgSaaS> orgSaaSList) {
+        this.saasName = saasName;
+        this.orgSaaSList = orgSaaSList;
+    }
+
+    // 복사본을 반환하도록 수정
+    public List<OrgSaaS> getOrgSaaSList() {
+        return Collections.unmodifiableList(orgSaaSList);
+    }
 }

@@ -1,6 +1,7 @@
 package com.GASB.slack_func.mapper;
 
 import com.GASB.slack_func.model.entity.*;
+import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.slack.api.model.File;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,8 @@ public class SlackFileMapper {
     @Value("${aws.s3.bucket}")
     private String bucketName;
 
+    private final SlackUserRepo slackUserRepo;
+
 
     public StoredFile toStoredFileEntity(File file, String hash, String filePath) {
         if (file == null) {
@@ -29,7 +32,7 @@ public class SlackFileMapper {
         return StoredFile.builder()
                 .type(file.getFiletype())
                 .size(file.getSize())
-                .SavePath(bucketName + "/" + filePath)
+                .savePath(bucketName + "/" + filePath)
                 .saltedHash(hash)
                 .build();
     }
@@ -39,11 +42,11 @@ public class SlackFileMapper {
                 .collect(Collectors.toList());
     }
 
-    public fileUpload toFileUploadEntity(File file, OrgSaaS orgSaas, String hash) {
+    public FileUploadTable toFileUploadEntity(File file, OrgSaaS orgSaas, String hash) {
         if (file == null) {
             return null;
         }
-        return fileUpload.builder()
+        return FileUploadTable.builder()
                 .orgSaaS(orgSaas)
                 .saasFileId(file.getId())
                 .hash(hash)
@@ -52,7 +55,7 @@ public class SlackFileMapper {
     }
 
 
-    public Activities toActivityEntity(File file, String eventType, MonitoredUsers user) {
+    public Activities toActivityEntity(File file, String eventType, MonitoredUsers user, String channel) {
         if (file == null) {
             return null;
         }
@@ -62,7 +65,16 @@ public class SlackFileMapper {
                 .saasFileId(file.getId())
                 .fileName(file.getTitle())
                 .eventTs(LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.systemDefault()))
-                .uploadChannel(file.getChannels().isEmpty() ? null : file.getChannels().get(0))
+                .uploadChannel(file.getChannels().isEmpty() ? null : channel)
+                .build();
+    }
+
+    public Activities toActivityEntitiyForDeleteEvent(String file_id, String eventType, String user_id){
+        return Activities.builder()
+                .user(slackUserRepo.findByUserId(user_id).orElse(null))
+                .eventType(eventType)
+                .saasFileId(file_id)
+                .uploadChannel(null)
                 .build();
     }
 }

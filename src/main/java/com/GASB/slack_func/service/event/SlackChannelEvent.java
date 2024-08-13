@@ -21,7 +21,7 @@ public class SlackChannelEvent {
     private final SlackApiService slackApiService;
     private final OrgSaaSRepo orgSaaSRepo;
     private final FileUtil fileUtil;
-
+    
     public void handleChannelEvent(Map<String, Object> payload) {
         log.info("Handling channel event");
         try {

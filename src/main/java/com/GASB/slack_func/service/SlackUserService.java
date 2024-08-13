@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SlackUserService {
 
+    
     private final SlackApiService slackApiService;
     private final SlackUserMapper slackUserMapper;
     private final SlackUserRepo slackUserRepo;

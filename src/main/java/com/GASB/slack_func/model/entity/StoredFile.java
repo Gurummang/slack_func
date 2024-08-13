@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -26,7 +25,7 @@ public class StoredFile {
     private String type;
 
     @Column(name="save_path",columnDefinition = "TEXT", nullable = false)
-    private String SavePath;
+    private String savePath;
 
     @JsonIgnore
     @OneToOne(mappedBy = "storedFile", cascade = CascadeType.ALL)

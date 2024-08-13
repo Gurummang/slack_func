@@ -81,9 +81,9 @@ public enum MimeType {
         return type != null ? type.getExtension() : ""; // 기본값
     } // 함수 설명 : MIME 타입에 따른 확장자를 반환
 
-    public static boolean MimeMatch(String mimeType, String extension) {
+    public static boolean mimeMatch(String mimeType, String extension) {
         String expectedMimeType = getMimeTypeByExtension(extension);
-        log.info("MIME 타입 : " + mimeType + " / 기대 MIME 타입 : " + expectedMimeType);
+//        log.info("MIME 타입 : " + mimeType + " / 기대 MIME 타입 : " + expectedMimeType);
         return mimeType.equals(expectedMimeType);
     } // 함수 설명 : MIME 타입과 확장자가 일치하는지 확인
 

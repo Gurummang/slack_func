@@ -20,7 +20,7 @@ public class TypeScan {
 
     @OneToOne
     @JoinColumn(name = "upload_id", nullable = false, referencedColumnName = "id")
-    private fileUpload file_upload;
+    private FileUploadTable file_upload;
 
     @Column(name = "correct")
     private Boolean correct;

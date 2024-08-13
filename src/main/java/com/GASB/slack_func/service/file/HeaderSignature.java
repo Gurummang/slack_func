@@ -9,6 +9,7 @@ import java.util.Map;
 @Getter
 @Slf4j
 public enum HeaderSignature {
+
     // Image files
     JPG("jpg", "FFD8", 4),
     PNG("png", "89504E47", 8),
@@ -81,7 +82,6 @@ public enum HeaderSignature {
 
     public static String getExtensionBySignature(String signature, String extension) {
         HeaderSignature type = signatureToEnumMap.get(signature.toUpperCase() + "|" + extension.toLowerCase());
-        log.info("type : {}", type);
         return type != null ? type.getExtension() : null;
     }
 }

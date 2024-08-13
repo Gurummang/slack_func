@@ -1,7 +1,7 @@
 package com.GASB.slack_func.repository.files;
 
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
-import com.GASB.slack_func.model.entity.fileUpload;
+import com.GASB.slack_func.model.entity.FileUploadTable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface FileUploadRepository extends JpaRepository<fileUpload, Long> {
+public interface FileUploadRepository extends JpaRepository<FileUploadTable, Long> {
     @Query("SELECT new com.GASB.slack_func.model.dto.file.SlackRecentFileDTO(a.fileName, u.userName, sf.type, fu.timestamp) " +
-            "FROM fileUpload fu " +
+            "FROM FileUploadTable fu " +
             "JOIN OrgSaaS os ON fu.orgSaaS.id = os.id " +
             "JOIN Activities a ON fu.saasFileId = a.saasFileId " +
             "JOIN StoredFile sf ON fu.hash = sf.saltedHash " +
@@ -25,5 +25,10 @@ public interface FileUploadRepository extends JpaRepository<fileUpload, Long> {
 
     // Corrected method to find by OrgSaaS fields
 
-    Optional<fileUpload> findBySaasFileIdAndTimestamp(String saasFileId, LocalDateTime timestamp);
+    Optional<FileUploadTable> findBySaasFileIdAndTimestamp(String saasFileId, LocalDateTime timestamp);
+
+    @Query("UPDATE FileUploadTable fu " +
+            "SET fu.deleted = true " +
+            "WHERE fu.saasFileId = :saasFileId")
+    void checkDelete(@Param("saasFileId") String saasFileId);
 }

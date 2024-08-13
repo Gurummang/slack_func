@@ -2,21 +2,18 @@ package com.GASB.slack_func.service.file;
 
 import com.GASB.slack_func.mapper.SlackFileMapper;
 import com.GASB.slack_func.model.entity.*;
-import com.GASB.slack_func.repository.AV.DlpRepo;
-import com.GASB.slack_func.repository.AV.FileStatusRepository;
-import com.GASB.slack_func.repository.AV.VtReportRepository;
 import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.channel.SlackChannelRepository;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.files.SlackFileRepository;
-import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.org.WorkspaceConfigRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
+import com.GASB.slack_func.service.MessageSender;
 import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.apache.commons.io.FilenameUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
@@ -40,24 +37,34 @@ import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class FileUtil {
 
     private final SlackFileRepository storedFilesRepository;
     private final FileUploadRepository fileUploadRepository;
     private final FileActivityRepo activitiesRepository;
     private final SlackUserRepo slackUserRepo;
-    private final OrgSaaSRepo orgSaaSRepo;
     private final SlackChannelRepository slackChannelRepository;
     private final SlackFileMapper slackFileMapper;
     private final RestTemplate restTemplate;
-    private final DlpRepo dlpRepo;
-    private final VtReportRepository vtReportRepository;
-    private final FileStatusRepository fileStatusRepository;
     private final S3Client s3Client;
-    private final RabbitTemplate rabbitTemplate;
     private final WorkspaceConfigRepo worekSpaceRepo;
     private final ScanUtil scanUtil;
+    private final MessageSender messageSender;
+
+    @Autowired
+    public FileUtil(SlackFileRepository storedFilesRepository, FileUploadRepository fileUploadRepository, FileActivityRepo activitiesRepository, SlackUserRepo slackUserRepo, SlackChannelRepository slackChannelRepository, SlackFileMapper slackFileMapper, RestTemplate restTemplate, S3Client s3Client, WorkspaceConfigRepo worekSpaceRepo, ScanUtil scanUtil, MessageSender messageSender) {
+        this.storedFilesRepository = storedFilesRepository;
+        this.fileUploadRepository = fileUploadRepository;
+        this.activitiesRepository = activitiesRepository;
+        this.slackUserRepo = slackUserRepo;
+        this.slackChannelRepository = slackChannelRepository;
+        this.slackFileMapper = slackFileMapper;
+        this.restTemplate = restTemplate;
+        this.s3Client = s3Client;
+        this.worekSpaceRepo = worekSpaceRepo;
+        this.scanUtil = scanUtil;
+        this.messageSender = messageSender;
+    }
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -65,11 +72,11 @@ public class FileUtil {
 
     @Async("threadPoolTaskExecutor")
     @Transactional
-    public CompletableFuture<Void> processAndStoreFile(File file, OrgSaaS orgSaaSObject, int workspaceId) {
+    public CompletableFuture<Void> processAndStoreFile(File file, OrgSaaS orgSaaSObject, int workspaceId, String event_type) {
         return downloadFileAsync(file.getUrlPrivateDownload(), getToken(workspaceId))
                 .thenApply(fileData -> {
                     try {
-                        return handleFileProcessing(file, orgSaaSObject, fileData, workspaceId);
+                        return handleFileProcessing(file, orgSaaSObject, fileData, workspaceId, event_type);
                     } catch (IOException | NoSuchAlgorithmException e) {
                         throw new RuntimeException("File processing failed", e);
                     }
@@ -110,7 +117,7 @@ public class FileUtil {
         }
     }
 
-    private Void handleFileProcessing(File file, OrgSaaS orgSaaSObject, byte[] fileData, int workspaceId) throws IOException, NoSuchAlgorithmException {
+    private Void handleFileProcessing(File file, OrgSaaS orgSaaSObject, byte[] fileData, int workspaceId, String event_type) throws IOException, NoSuchAlgorithmException {
         String hash = calculateHash(fileData);
         String workspaceName = worekSpaceRepo.findById(workspaceId).get().getWorkspaceName();
 
@@ -126,6 +133,7 @@ public class FileUtil {
 
         String saasName = orgSaaSObject.getSaas().getSaasName();
         String orgName = orgSaaSObject.getOrg().getOrgName();
+
         String filePath = saveFileToLocal(fileData, saasName, workspaceName, channelName, hash, file.getTitle());
 
         // 저장 경로 설정
@@ -133,11 +141,8 @@ public class FileUtil {
         String s3Key = String.format("%s/%s/%s/%s/%s/%s", orgName, saasName, workspaceName, channelName, hash, file.getTitle());
 
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
-        fileUpload fileUploadObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash);
-        Activities activity = slackFileMapper.toActivityEntity(file, "file_uploaded", user);
-        activity.setUploadChannel(uploadedChannelPath);
-
-
+        FileUploadTable fileUploadTableObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash);
+        Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath);
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
             if (activityDuplicate(activity)) {
@@ -146,8 +151,8 @@ public class FileUtil {
                 log.warn("Duplicate activity detected and ignored: {}", file.getName());
             }
 
-            if (fileUploadDuplicate(fileUploadObject)) {
-                fileUploadRepository.save(fileUploadObject);
+            if (fileUploadDuplicate(fileUploadTableObject)) {
+                fileUploadRepository.save(fileUploadTableObject);
             } else {
                 log.warn("Duplicate file upload detected and ignored: {}", file.getName());
             }
@@ -155,7 +160,8 @@ public class FileUtil {
             if (isFileNotStored(storedFile)) {
                 try {
                     storedFilesRepository.save(storedFile);
-                    sendMessage(storedFile.getId());
+                    messageSender.sendMessage(storedFile.getId());
+                    messageSender.sendGroupingMessage(activity.getId());
                     log.info("File uploaded successfully: {}", file.getName());
                 } catch (DataIntegrityViolationException e) {
                     log.warn("Duplicate entry detected and ignored: {}", file.getName());
@@ -164,7 +170,7 @@ public class FileUtil {
                 log.warn("Duplicate file detected: {}", file.getName());
             }
         }
-        scanUtil.scanFile(filePath, fileUploadObject, file.getMimetype(), file.getFiletype());
+        scanUtil.scanFile(filePath, fileUploadTableObject, file.getMimetype(), file.getFiletype());
         uploadFileToS3(filePath, s3Key);
 
         return null;
@@ -174,9 +180,9 @@ public class FileUtil {
         return storedFilesRepository.findBySaltedHash(storedFile.getSaltedHash()).isEmpty();
     }
 
-    private boolean fileUploadDuplicate(fileUpload fileUploadObject) {
-        String fild_id = fileUploadObject.getSaasFileId();
-        LocalDateTime event_ts = fileUploadObject.getTimestamp();
+    private boolean fileUploadDuplicate(FileUploadTable fileUploadTableObject) {
+        String fild_id = fileUploadTableObject.getSaasFileId();
+        LocalDateTime event_ts = fileUploadTableObject.getTimestamp();
         return fileUploadRepository.findBySaasFileIdAndTimestamp(fild_id, event_ts).isEmpty();
     }
 
@@ -202,16 +208,40 @@ public class FileUtil {
     }
 
     private String saveFileToLocal(byte[] fileData, String saasName, String workspaceName, String channelName, String hash, String fileName) throws IOException {
-        saasName = sanitizePathSegment(saasName);
-        workspaceName = sanitizePathSegment(workspaceName);
-//        channelName = sanitizePathSegment(channelName);
-        fileName = sanitizeFileName(fileName);
+        // Ensure input parameters are not null
+        if (fileData == null || saasName == null || workspaceName == null || channelName == null || hash == null || fileName == null) {
+            throw new IllegalArgumentException("None of the input parameters can be null");
+        }
 
+        // Sanitize path segments and file name
+        String sanitizedSaasName = sanitizePathSegment(saasName);
+        String sanitizedWorkspaceName = sanitizePathSegment(workspaceName);
+        String sanitizedChannelName = sanitizePathSegment(channelName);
+        String sanitizedHash = sanitizePathSegment(hash);
+        String sanitizedFileName = sanitizeFileName(fileName);
+
+        // Ensure sanitized values are not null
+        if (sanitizedSaasName == null || sanitizedWorkspaceName == null || sanitizedChannelName == null || sanitizedHash == null || sanitizedFileName == null) {
+            throw new IllegalArgumentException("Sanitized values cannot be null");
+        }
+
+        // Build the file path
         Path basePath = Paths.get("downloaded_files");
-        Path filePath = basePath.resolve(Paths.get(saasName, workspaceName, channelName, hash, fileName));
+        Path filePath = basePath.resolve(Paths.get(sanitizedSaasName, sanitizedWorkspaceName, sanitizedChannelName, sanitizedHash, sanitizedFileName));
 
-        Files.createDirectories(filePath.getParent());
+        // Create the necessary directories
+        try {
+            Files.createDirectories(filePath.getParent());
+        } catch (SecurityException | IOException e) {
+            log.error("Error creating directories: {}", e.getMessage(), e);
+        } finally {
+            log.info("Directories created: {}", filePath.getParent());
+        }
+
+        // Write the file
         Files.write(filePath, fileData);
+
+        // Return the file path
         return filePath.toString();
     }
 
@@ -250,19 +280,27 @@ public class FileUtil {
         return userOptional.get();
     }
 
-    private static String sanitizePathSegment(String segment) {
-        return segment.replaceAll("[^a-zA-Z0-9-_]", "_");
+    private String sanitizePathSegment(String segment) {
+        if (segment == null) {
+            return null;
+        }
+        // 경로 세그먼트에서 허용되지 않는 문자를 제거하거나 치환하는 로직 추가
+        return segment.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
     }
 
-    private static String sanitizeFileName(String fileName) {
-        return fileName.replaceAll("[^a-zA-Z0-9-_.]", "_");
+    private String sanitizeFileName(String fileName) {
+        if (fileName == null) {
+            return null;
+        }
+        // 파일 이름에서 허용되지 않는 문자를 제거하거나 치환하는 로직 추가
+        return FilenameUtils.getName(fileName).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
     }
 
     private String getFirstChannelId(File file) {
         return file.getChannels().isEmpty() ? null : file.getChannels().get(0);
     }
 
-    public String TokenSelector(OrgSaaS orgSaaSObject) {
+    public String tokenSelector(OrgSaaS orgSaaSObject) {
         WorkspaceConfig workspaceConfig = worekSpaceRepo.findById(orgSaaSObject.getId()).get();
         return workspaceConfig.getToken();
     }
@@ -272,10 +310,4 @@ public class FileUtil {
                 .orElseThrow(() -> new NoSuchElementException("No token found for spaceId: " + workespaceId))
                 .getToken();
     }
-    public void sendMessage(Long message) {
-        rabbitTemplate.convertAndSend(message);
-        System.out.println("Sent message: " + message);
-    }
-
-
 }
