@@ -21,7 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -46,8 +48,16 @@ public class SlackBoardController {
 
     @GetMapping("/files/size")
     @ValidateJWT
-    public ResponseEntity<SlackFileSizeDto> fetchFileSize(HttpServletRequest servletRequest){
+    public ResponseEntity<?> fetchFileSize(HttpServletRequest servletRequest){
         try{
+            if (servletRequest.getAttribute("error") != null) {
+                String errorMessage = (String) servletRequest.getAttribute("error");
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error_code", "401");
+                errorResponse.put("error_message", errorMessage);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+
             String email = (String) servletRequest.getAttribute("email");
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
             SlackFileSizeDto slackFileSizeDto = slackFileService.sumOfSlackFileSize(orgId,1);
@@ -61,8 +71,16 @@ public class SlackBoardController {
 
     @GetMapping("/files/count")
     @ValidateJWT
-    public ResponseEntity<SlackFileCountDto> fetchFileCount(HttpServletRequest servletRequest){
+    public ResponseEntity<?> fetchFileCount(HttpServletRequest servletRequest){
         try{
+            if (servletRequest.getAttribute("error") != null) {
+                String errorMessage = (String) servletRequest.getAttribute("error");
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error_code", "401");
+                errorResponse.put("error_message", errorMessage);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+
             String email = (String) servletRequest.getAttribute("email");
             // log.info("httpServletRequest: {}", servletRequest);
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
@@ -76,8 +94,15 @@ public class SlackBoardController {
     }
     @GetMapping("/files/recent")
     @ValidateJWT
-    public ResponseEntity<List<SlackRecentFileDTO>> fetchRecentFiles(HttpServletRequest servletRequest) {
+    public ResponseEntity<?> fetchRecentFiles(HttpServletRequest servletRequest) {
         try {
+            if (servletRequest.getAttribute("error") != null) {
+                String errorMessage = (String) servletRequest.getAttribute("error");
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error_code", "401");
+                errorResponse.put("error_message", errorMessage);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
             String email = (String) servletRequest.getAttribute("email");
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
             Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
@@ -92,8 +117,16 @@ public class SlackBoardController {
 
     @GetMapping("/user-ranking")
     @ValidateJWT
-    public ResponseEntity<List<TopUserDTO>> fetchUserRanking(HttpServletRequest servletRequest) {
+    public ResponseEntity<?> fetchUserRanking(HttpServletRequest servletRequest) {
         try {
+            if (servletRequest.getAttribute("error") != null) {
+                String errorMessage = (String) servletRequest.getAttribute("error");
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error_code", "401");
+                errorResponse.put("error_message", errorMessage);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+
             String email = (String) servletRequest.getAttribute("email");
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
             Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);

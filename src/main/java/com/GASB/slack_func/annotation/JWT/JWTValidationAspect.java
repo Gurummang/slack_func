@@ -33,9 +33,9 @@ public class JWTValidationAspect {
 
     @Before("@annotation(com.GASB.slack_func.annotation.JWT.ValidateJWT)")
     public void validateJWT() {
-        // 쿠키값 추출
         Cookie[] cookies = servletRequest.getCookies();
         String jwtToken = null;
+
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if ("jwt".equals(cookie.getName())) {
@@ -46,13 +46,15 @@ public class JWTValidationAspect {
         }
 
         if (jwtToken == null) {
-            throw new IllegalArgumentException("JWT token not found in cookies");
+            servletRequest.setAttribute("error", "JWT token not found in cookies");
+            return;
         }
 
-        // 인증 서버로 JWT 검증 요청
         String email = validateRequest(jwtToken);
 
-        servletRequest.setAttribute("email", email);
+        if (email != null) {
+            servletRequest.setAttribute("email", email);
+        }
     }
 
     private String validateRequest(String jwtToken) {
@@ -61,20 +63,20 @@ public class JWTValidationAspect {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         try {
-            log.info("Sending request to auth server with token: {}", jwtToken);
-            log.info("request content: {}", entity);
             ResponseEntity<JwtValidationResponse> response = restTemplate.postForEntity(authServerUrl, entity, JwtValidationResponse.class);
             log.info("Received response from auth server: {}", response);
 
             JwtValidationResponse jwtValidationResponse = response.getBody();
             log.info("JWT validation response: {}", jwtValidationResponse);
             if (jwtValidationResponse == null || !"OK".equals(jwtValidationResponse.getStatus())) {
-                throw new IllegalArgumentException("JWT token is invalid or the validation response is null");
+                servletRequest.setAttribute("error", "JWT token is invalid or the validation response is null");
+                return null;
             }
             return jwtValidationResponse.getEmail();
         } catch (HttpClientErrorException e) {
             log.error("JWT token validation failed: {} - Response body: {}", e.getMessage(), e.getResponseBodyAsString());
-            throw new IllegalArgumentException("JWT token validation failed: " + e.getMessage(), e);
+            servletRequest.setAttribute("error", "JWT token validation failed: " + e.getMessage());
+            return null;
         }
     }
 }
