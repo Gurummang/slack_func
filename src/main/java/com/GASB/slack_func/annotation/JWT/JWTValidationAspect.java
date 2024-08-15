@@ -36,12 +36,15 @@ public class JWTValidationAspect {
         Cookie[] cookies = servletRequest.getCookies();
         String jwtToken = null;
 
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("jwt".equals(cookie.getName())) {
-                    jwtToken = cookie.getValue();
-                    break;
-                }
+        if (cookies == null){
+            servletRequest.setAttribute("error", "cookies are null");
+            return;
+        }
+
+        for (Cookie cookie : cookies) {
+            if ("jwt".equals(cookie.getName())) {
+                jwtToken = cookie.getValue();
+                break;
             }
         }
 
