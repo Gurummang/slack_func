@@ -53,6 +53,7 @@ public class SlackBoardController {
             if (servletRequest.getAttribute("error") != null) {
                 String errorMessage = (String) servletRequest.getAttribute("error");
                 Map<String, String> errorResponse = new HashMap<>();
+                log.error("Error fetching file size in size api: {}", errorMessage);
                 errorResponse.put("status", "401");
                 errorResponse.put("error_message", errorMessage);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
@@ -76,6 +77,7 @@ public class SlackBoardController {
             if (servletRequest.getAttribute("error") != null) {
                 String errorMessage = (String) servletRequest.getAttribute("error");
                 Map<String, String> errorResponse = new HashMap<>();
+                log.error("Error fetching file count in count api: {}", errorMessage);
                 errorResponse.put("status", "401");
                 errorResponse.put("error_message", errorMessage);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
@@ -99,6 +101,7 @@ public class SlackBoardController {
             if (servletRequest.getAttribute("error") != null) {
                 String errorMessage = (String) servletRequest.getAttribute("error");
                 Map<String, String> errorResponse = new HashMap<>();
+                log.error("Error fetching recent files in recent api: {}", errorMessage);
                 errorResponse.put("status", "401");
                 errorResponse.put("error_message", errorMessage);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
@@ -122,6 +125,7 @@ public class SlackBoardController {
             if (servletRequest.getAttribute("error") != null) {
                 String errorMessage = (String) servletRequest.getAttribute("error");
                 Map<String, String> errorResponse = new HashMap<>();
+                log.error("Error fetching user ranking in user-ranking api: {}", errorMessage);
                 errorResponse.put("status", "401");
                 errorResponse.put("error_message", errorMessage);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
@@ -134,10 +138,6 @@ public class SlackBoardController {
             List<TopUserDTO> topuser = future.get();
 
             return ResponseEntity.ok(topuser);
-        } catch (RuntimeException e){
-            // log.error("Error fetching recent files", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonList(new TopUserDTO("Error", 0L, 0L, LocalDateTime.now())));
         } catch (Exception e) {
             // log.error("Error fetching recent files", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

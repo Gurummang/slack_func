@@ -38,6 +38,7 @@ public class JWTValidationAspect {
 
         if (cookies == null){
             servletRequest.setAttribute("error", "cookies are null");
+            log.error("Cookies are null");
             return;
         }
 
@@ -49,6 +50,7 @@ public class JWTValidationAspect {
         }
 
         if (jwtToken == null) {
+            log.error("JWT token not found in cookies");
             servletRequest.setAttribute("error", "JWT token not found in cookies");
             return;
         }
@@ -56,6 +58,7 @@ public class JWTValidationAspect {
         String email = validateRequest(jwtToken);
 
         if (email != null) {
+            log.error("JWT token is valid for email: {}", email);
             servletRequest.setAttribute("email", email);
         }
     }
