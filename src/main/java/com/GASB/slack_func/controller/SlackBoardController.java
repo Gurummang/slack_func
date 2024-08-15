@@ -53,7 +53,7 @@ public class SlackBoardController {
             if (servletRequest.getAttribute("error") != null) {
                 String errorMessage = (String) servletRequest.getAttribute("error");
                 Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error_code", "401");
+                errorResponse.put("status", "401");
                 errorResponse.put("error_message", errorMessage);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
             }
@@ -76,7 +76,7 @@ public class SlackBoardController {
             if (servletRequest.getAttribute("error") != null) {
                 String errorMessage = (String) servletRequest.getAttribute("error");
                 Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error_code", "401");
+                errorResponse.put("status", "401");
                 errorResponse.put("error_message", errorMessage);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
             }
@@ -99,7 +99,7 @@ public class SlackBoardController {
             if (servletRequest.getAttribute("error") != null) {
                 String errorMessage = (String) servletRequest.getAttribute("error");
                 Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error_code", "401");
+                errorResponse.put("status", "401");
                 errorResponse.put("error_message", errorMessage);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
             }
@@ -122,7 +122,7 @@ public class SlackBoardController {
             if (servletRequest.getAttribute("error") != null) {
                 String errorMessage = (String) servletRequest.getAttribute("error");
                 Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error_code", "401");
+                errorResponse.put("status", "401");
                 errorResponse.put("error_message", errorMessage);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
             }
