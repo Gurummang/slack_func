@@ -35,7 +35,7 @@ public class SlackApiService {
     }
     // ConversationsList API호출 메서드
     public List<Conversation> fetchConversations(int workspaceId) throws IOException, SlackApiException {
-        token = fileUtil.getToken(workspaceId);
+        token = aesUtil.decrypt(fileUtil.getToken(workspaceId),key);
         ConversationsListResponse conversationsResponse = slack.methods(token).conversationsList(r -> r);
         if (conversationsResponse.isOk()) {
             return conversationsResponse.getChannels();
@@ -46,7 +46,7 @@ public class SlackApiService {
 
     // users.list API호출 메서드
     public List<User> fetchUsers(int workspaceId) throws IOException, SlackApiException {
-        token = fileUtil.getToken(workspaceId);
+        token = aesUtil.decrypt(fileUtil.getToken(workspaceId),key);
         UsersListResponse usersListResponse = slack.methods(token).usersList(r -> r);
         if (usersListResponse.isOk()) {
             return usersListResponse.getMembers();
