@@ -6,6 +6,8 @@ import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
 import com.GASB.slack_func.model.entity.Saas;
+import com.GASB.slack_func.repository.files.FileUploadRepository;
+import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.AdminRepo;
 import com.GASB.slack_func.repository.org.SaasRepo;
 import com.GASB.slack_func.service.SlackUserService;
@@ -13,17 +15,20 @@ import com.GASB.slack_func.service.file.SlackFileService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -35,14 +40,22 @@ public class SlackBoardController {
     private final AdminRepo adminRepo;
     private final SlackFileService fileService;
     private final SlackUserService slackUserService;
+    private final FileUploadRepository fileUploadRepository;
+
+    private final SlackFileRepository slackFileRepository;
 
     @Autowired
-    public SlackBoardController(SlackFileService slackFileService, SaasRepo saasRepo, AdminRepo adminRepo, SlackFileService fileService, SlackUserService slackUserService) {
+    public SlackBoardController(SlackFileService slackFileService, SaasRepo saasRepo
+            , AdminRepo adminRepo, SlackFileService fileService
+            , SlackUserService slackUserService, FileUploadRepository fileUploadRepository,
+                                SlackFileRepository slackFileRepository) {
         this.slackFileService = slackFileService;
         this.saasRepo = saasRepo;
         this.adminRepo = adminRepo;
         this.fileService = fileService;
         this.slackUserService = slackUserService;
+        this.fileUploadRepository = fileUploadRepository;
+        this.slackFileRepository = slackFileRepository;
     }
     
 
@@ -142,6 +155,85 @@ public class SlackBoardController {
             // log.error("Error fetching recent files", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonList(new TopUserDTO("Error", 0L, 0L, LocalDateTime.now())));
+        }
+    }
+
+    @PostMapping("/files/download")
+    @ValidateJWT
+    public ResponseEntity<?> downloadFile(HttpServletRequest servletRequest, @RequestBody Map<String, String> request) {
+        try {
+            if (servletRequest.getAttribute("error") != null) {
+                String errorMessage = (String) servletRequest.getAttribute("error");
+                Map<String, String> errorResponse = new HashMap<>();
+                log.error("Error downloading file in downloadFile API: {}", errorMessage);
+                errorResponse.put("status", "401");
+                errorResponse.put("error_message", errorMessage);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+
+            // JWT에서 이메일 추출
+            String email = (String) servletRequest.getAttribute("email");
+            log.info("email : {}", email);
+
+            // 요청에서 file_name 가져오기
+            String fileName = request.get("file_name");
+
+            // 파일 이름 디코딩
+            byte[] decodedBytes = Base64.getDecoder().decode(fileName);
+            String decodedFileName = new String(decodedBytes, StandardCharsets.UTF_8);
+            log.info("decodedFileName : {}", decodedFileName);
+
+            // 파일 이름에서 해시값 추출
+            String[] fileInfo = decodedFileName.split("-");
+            if (fileInfo.length < 2) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid file name format");
+            }
+            String saltedHash = fileInfo[1];
+            log.info("saltedHash : {}", saltedHash);
+
+            // 파일 존재 여부 확인
+            boolean fileExists = fileUploadRepository.existsByUserAndHash(email, 1, saltedHash);
+            if (!fileExists) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("File not found or access denied");
+            }
+
+            // 해시값으로 파일 저장 경로 검사
+            String fileSavePath = slackFileRepository.findSavePathBySaltedHash(saltedHash).orElse(null);
+            if (fileSavePath == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File path not found");
+            }
+
+            // 파일 경로에서 상대 경로 추출
+            String baseDirectory = "slack-file-storage/SAMSUNG/";
+            if (fileSavePath.startsWith(baseDirectory)) {
+                String relativePath = fileSavePath.substring(baseDirectory.length());
+
+                // 다운로드 파일 경로 설정 (download_files 디렉토리로 변경)
+                Path downloadDirectory = Paths.get("downloaded_files").toAbsolutePath().normalize();
+                Path filePath = downloadDirectory.resolve(relativePath).normalize();
+                log.info("filePath : {}", filePath);
+
+                // 파일이 존재하고 읽을 수 있는지 확인
+                if (!Files.exists(filePath) || !Files.isReadable(filePath)) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found or not readable");
+                }
+
+                // 리소스 생성 및 반환
+                Resource resource = new UrlResource(filePath.toUri());
+                if (!resource.exists() || !resource.isReadable()) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Resource not found or not readable");
+                }
+
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                        .body(resource);
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid file path format");
+            }
+        } catch (Exception e) {
+            log.error("Error occurred while downloading the file", e);  // 예외 로깅
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }
     }
 

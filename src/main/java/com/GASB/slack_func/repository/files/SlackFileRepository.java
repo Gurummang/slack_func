@@ -38,6 +38,8 @@ public interface SlackFileRepository extends JpaRepository<StoredFile, Long> {
             "WHERE o.id = :orgId AND s.id = :saasId AND dr.dlp = true")
     Long getTotalDlpFileSize(@Param("orgId") int orgId, @Param("saasId") int saasId);
 
+    @Query("SELECT sf.savePath FROM StoredFile sf WHERE sf.saltedHash = :saltedHash")
+    Optional<String> findSavePathBySaltedHash(@Param("saltedHash") String saltedHash);
 
 
     @Query("SELECT COUNT(fu.id) FROM Org o "+
