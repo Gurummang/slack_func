@@ -193,6 +193,8 @@ public class SlackBoardController {
 
             // 파일 존재 여부 확인
             boolean fileExists = fileUploadRepository.existsByUserAndHash(email, 1, saltedHash);
+            String orgName = adminRepo.findByEmail(email).get().getOrg().getOrgName();
+
             if (!fileExists) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("File not found or access denied");
             }
@@ -204,7 +206,7 @@ public class SlackBoardController {
             }
 
             // 파일 경로에서 상대 경로 추출
-            String baseDirectory = "slack-file-storage/SAMSUNG/";
+            String baseDirectory = "slack-file-storage/" + orgName + "/";
             if (fileSavePath.startsWith(baseDirectory)) {
                 String relativePath = fileSavePath.substring(baseDirectory.length());
 
