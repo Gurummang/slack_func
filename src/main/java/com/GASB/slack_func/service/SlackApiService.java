@@ -10,6 +10,7 @@ import com.slack.api.methods.response.users.UsersListResponse;
 import com.slack.api.model.Conversation;
 import com.slack.api.model.File;
 import com.slack.api.model.User;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -22,9 +23,15 @@ public class SlackApiService {
     private final FileUtil fileUtil;
     private String token;
 
-    public SlackApiService(FileUtil fileUtil) {
+    private final AESUtil aesUtil;
+
+    @Value("${aes.key}")
+    private String key;
+
+    public SlackApiService(FileUtil fileUtil, AESUtil aesUtil) {
         this.slack = Slack.getInstance();
         this.fileUtil = fileUtil;
+        this.aesUtil = aesUtil;
     }
     // ConversationsList API호출 메서드
     public List<Conversation> fetchConversations(int workspaceId) throws IOException, SlackApiException {
@@ -49,7 +56,7 @@ public class SlackApiService {
     }
     // files.list API호출 메서드
     public List<File> fetchFiles(int workspaceId) throws IOException, SlackApiException {
-        token = fileUtil.getToken(workspaceId);
+        token = aesUtil.decrypt(fileUtil.getToken(workspaceId),key);
         FilesListResponse filesListResponse = slack.methods(token).filesList(r -> r);
         if (filesListResponse.isOk()) {
             return filesListResponse.getFiles();
@@ -60,7 +67,7 @@ public class SlackApiService {
 
     // files.info API호출 메서드
     public File fetchFileInfo(String fileId, int workspaceId) throws IOException, SlackApiException {
-        token = fileUtil.getToken(workspaceId);
+        token = aesUtil.decrypt(fileUtil.getToken(workspaceId),key);
         com.slack.api.methods.response.files.FilesInfoResponse filesInfoResponse = slack.methods(token).filesInfo(r -> r.file(fileId));
         if (filesInfoResponse.isOk()) {
             return filesInfoResponse.getFile();
@@ -71,7 +78,7 @@ public class SlackApiService {
 
     // conversations.info API호출 메서드
     public Conversation fetchConversationInfo(String channelId, OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
-        token = fileUtil.tokenSelector(orgSaaSObject);
+        token = aesUtil.decrypt(fileUtil.tokenSelector(orgSaaSObject),key);
         com.slack.api.methods.response.conversations.ConversationsInfoResponse conversationsInfoResponse = slack.methods(token).conversationsInfo(r -> r.channel(channelId));
         if (conversationsInfoResponse.isOk()) {
             return conversationsInfoResponse.getChannel();
@@ -82,7 +89,7 @@ public class SlackApiService {
 
     // users.info API호출 메서드
     public User fetchUserInfo(String userId, OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
-        token = fileUtil.tokenSelector(orgSaaSObject);
+        token = aesUtil.decrypt(fileUtil.tokenSelector(orgSaaSObject),key);
         com.slack.api.methods.response.users.UsersInfoResponse usersInfoResponse = slack.methods(token).usersInfo(r -> r.user(userId));
         if (usersInfoResponse.isOk()) {
             return usersInfoResponse.getUser();

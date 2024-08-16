@@ -25,6 +25,8 @@ repositories {
 }
 
 dependencies {
+	implementation 'junit:junit:4.13.1'
+	implementation 'org.junit.jupiter:junit-jupiter:5.8.1'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
@@ -72,14 +74,24 @@ dependencies {
 	implementation 'org.apache.tika:tika-core:2.9.2'
 	implementation 'org.apache.tika:tika-parsers-standard-package:2.9.2'
 
+	//Jasypt
+	implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.4'
+	testImplementation 'org.assertj:assertj-core:3.24.2'
+
+	testImplementation 'org.mockito:mockito-core'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
 	// Spring Security
 //	implementation 'org.springframework.boot:spring-boot-starter-security'
 //	testImplementation 'org.springframework.security:spring-security-test'
 }
 
-//tasks.named('test') {
-//	useJUnitPlatform()
-//}
+tasks.named('test') {
+	useJUnitPlatform()
+}
 ////spotbugs {
 ////	toolVersion = '4.8.6'
 ////}
