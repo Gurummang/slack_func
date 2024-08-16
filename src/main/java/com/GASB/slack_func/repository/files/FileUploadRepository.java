@@ -31,4 +31,17 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
             "SET fu.deleted = true " +
             "WHERE fu.saasFileId = :saasFileId")
     void checkDelete(@Param("saasFileId") String saasFileId);
+
+
+
+    @Query("SELECT CASE WHEN COUNT(f) > 0 THEN true ELSE false END " +
+            "FROM FileUploadTable f " +
+            "JOIN OrgSaaS os ON f.orgSaaS.id = os.id " +
+            "JOIN AdminUsers a ON os.org.id = a.org.id " +
+            "WHERE a.email = :email " +
+            "AND os.saas.id = :saasId " +
+            "AND f.hash = :saltedHash")
+    boolean existsByUserAndHash(@Param("email") String email,
+                                @Param("saasId") int saasId,
+                                @Param("saltedHash") String saltedHash);
 }
