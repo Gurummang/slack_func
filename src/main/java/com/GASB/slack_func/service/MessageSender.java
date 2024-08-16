@@ -2,6 +2,7 @@ package com.GASB.slack_func.service;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -11,7 +12,8 @@ public class MessageSender {
     private final RabbitTemplate groupingRabbitTemplate;
 
     @Autowired
-    public MessageSender(RabbitTemplate rabbitTemplate, RabbitTemplate groupingRabbitTemplate) {
+    public MessageSender(@Qualifier("rabbitTemplate") RabbitTemplate rabbitTemplate,
+                         @Qualifier("groupingRabbitTemplate") RabbitTemplate groupingRabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
         this.groupingRabbitTemplate = groupingRabbitTemplate;
     }

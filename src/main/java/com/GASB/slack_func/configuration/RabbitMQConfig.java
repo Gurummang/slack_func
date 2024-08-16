@@ -7,6 +7,7 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,16 +51,14 @@ public class RabbitMQConfig {
 
     // 첫 번째 바인딩 설정
     @Bean
-    Binding fileQueueBinding(Queue fileQueue, DirectExchange exchange) {
+    Binding fileQueueBinding(@Qualifier("fileQueue") Queue fileQueue, DirectExchange exchange) {
         return BindingBuilder.bind(fileQueue).to(exchange).with(routingKey);
     }
 
-    // 두 번째 바인딩 설정
     @Bean
-    Binding groupingQueueBinding(Queue groupingQueue, DirectExchange exchange) {
+    Binding groupingQueueBinding(@Qualifier("groupingQueue") Queue groupingQueue, DirectExchange exchange) {
         return BindingBuilder.bind(groupingQueue).to(exchange).with(groupingRoutingKey);
     }
-
     // RabbitTemplate 설정 (기본 라우팅 키 사용)
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
