@@ -49,9 +49,6 @@ public class SlackFileEvent {
         }
     }
 
-    public void handleFileChangeEvent(Map<String, Object> payload) {
-    }
-
     public void handleFileDeleteEvent(Map<String, Object> payload) {
         // 1. activities 테이블에 deleted 이벤트로 추가
         String file_id = payload.get("fileId").toString();
