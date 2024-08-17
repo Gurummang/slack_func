@@ -2,7 +2,9 @@ package com.GASB.slack_func.repository.files;
 
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
 import com.GASB.slack_func.model.entity.FileUploadTable;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -27,6 +29,10 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
 
     Optional<FileUploadTable> findBySaasFileIdAndTimestamp(String saasFileId, LocalDateTime timestamp);
 
+    @Query("SELECT f FROM FileUploadTable f WHERE f.timestamp = :timestamp AND f.hash = :hash")
+    Optional<FileUploadTable> findByTimestampAndHash(@Param("timestamp") LocalDateTime timestamp, @Param("hash") String hash);
+    @Transactional
+    @Modifying
     @Query("UPDATE FileUploadTable fu " +
             "SET fu.deleted = true " +
             "WHERE fu.saasFileId = :saasFileId")

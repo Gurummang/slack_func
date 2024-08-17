@@ -42,7 +42,7 @@ public class SlackEventController {
 
     @PostMapping("/file-change")
     public ResponseEntity<String> handleFileChangeEvent(@RequestBody Map<String, Object> payload) {
-        slackFileEvent.handleFileEvent(payload, "file_changed");
+        slackFileEvent.handleFileEvent(payload, "file_change");
         return ResponseEntity.ok("File Change Event received and logged");
     }
 

@@ -3,6 +3,7 @@ package com.GASB.slack_func.service.event;
 import com.GASB.slack_func.mapper.SlackFileMapper;
 import com.GASB.slack_func.model.entity.Activities;
 import com.GASB.slack_func.model.entity.OrgSaaS;
+import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.service.SlackApiService;
@@ -26,6 +27,7 @@ public class SlackFileEvent {
     private final OrgSaaSRepo orgSaaSRepo;
     private final FileUploadRepository fileUploadRepository;
     private final SlackFileMapper slackFileMapper;
+    private final FileActivityRepo fileActivityRepo;
 
     public void handleFileEvent(Map<String, Object> payload, String event_type) {
         log.info("Handling file event with payload: {}", payload);
@@ -50,11 +52,16 @@ public class SlackFileEvent {
     }
 
     public void handleFileDeleteEvent(Map<String, Object> payload) {
-        // 1. activities 테이블에 deleted 이벤트로 추가
-        String file_id = payload.get("fileId").toString();
-        String user_id = payload.get("userId").toString();
-        Activities activities = slackFileMapper.toActivityEntitiyForDeleteEvent(file_id, "file_delete", user_id);
-        // 2. file_upload 테이블에서 deleted 컬럼을 true로 변경
-        fileUploadRepository.checkDelete(payload.get("fileId").toString());
+       try {
+           // 1. activities 테이블에 deleted 이벤트로 추가
+           String file_id = payload.get("fileId").toString();
+           String user_id = payload.get("userId").toString();
+           Activities activities = slackFileMapper.toActivityEntitiyForDeleteEvent(file_id, "file_delete", user_id);
+           fileActivityRepo.save(activities);
+           // 2. file_upload 테이블에서 deleted 컬럼을 true로 변경
+           fileUploadRepository.checkDelete(payload.get("fileId").toString());
+       } catch (Exception e) {
+           log.error("Error processing file delete event", e);
+       }
     }
 }
