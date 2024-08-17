@@ -34,6 +34,11 @@ public class SlackFileEvent {
         try {
             String spaceId = payload.get("teamId").toString();
             String fileId = payload.get("fileId").toString();
+            String event = event_type;
+            if (payload.containsKey("event_ts")) {
+                StringBuilder eventBuilder = new StringBuilder(event);
+                event = eventBuilder.append(":").append(payload.get("event_ts").toString()).toString();
+            }
 
             OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(spaceId).orElse(null);
             File fileInfo = slackApiService.fetchFileInfo(fileId, orgSaaSObject.getId());
@@ -41,7 +46,7 @@ public class SlackFileEvent {
                 log.info("File is a quip or canvas file, skipping processing");
                 return;
             }
-            fileService.processAndStoreFile(fileInfo, orgSaaSObject, orgSaaSObject.getId(), event_type);
+            fileService.processAndStoreFile(fileInfo, orgSaaSObject, orgSaaSObject.getId(), event);
 
             log.info("File event processed successfully for file ID: {}", fileInfo.getId());
         } catch (SlackApiException | IOException e) {

@@ -35,8 +35,9 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
     @Modifying
     @Query("UPDATE FileUploadTable fu " +
             "SET fu.deleted = true " +
-            "WHERE fu.saasFileId = :saasFileId")
+            "WHERE fu.saasFileId = :saasFileId AND fu.id IS NOT NULL")
     void checkDelete(@Param("saasFileId") String saasFileId);
+
 
 
 
