@@ -188,15 +188,16 @@ public class FileUtil {
     }
 
     private boolean fileUploadDuplicate(FileUploadTable fileUploadTableObject) {
-        String fild_id = fileUploadTableObject.getSaasFileId();
         LocalDateTime event_ts = fileUploadTableObject.getTimestamp();
-        return fileUploadRepository.findBySaasFileIdAndTimestamp(fild_id, event_ts).isEmpty();
+        String hash = fileUploadTableObject.getHash();
+        return fileUploadRepository.findByTimestampAndHash(event_ts,hash).isEmpty();
     }
 
     private boolean activityDuplicate(Activities activity) {
         String fild_id = activity.getSaasFileId();
+        String event_type = activity.getEventType();
         LocalDateTime event_ts = activity.getEventTs();
-        return activitiesRepository.findBySaasFileIdAndEventTs(fild_id, event_ts).isEmpty();
+        return activitiesRepository.findByEventTsAndEventType(event_ts,event_type).isEmpty();
     }
 
     public static String calculateHash(byte[] fileData) throws NoSuchAlgorithmException {

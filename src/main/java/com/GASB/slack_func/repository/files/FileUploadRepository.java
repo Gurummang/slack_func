@@ -29,6 +29,8 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
 
     Optional<FileUploadTable> findBySaasFileIdAndTimestamp(String saasFileId, LocalDateTime timestamp);
 
+    @Query("SELECT f FROM FileUploadTable f WHERE f.timestamp = :timestamp AND f.hash = :hash")
+    Optional<FileUploadTable> findByTimestampAndHash(@Param("timestamp") LocalDateTime timestamp, @Param("hash") String hash);
     @Transactional
     @Modifying
     @Query("UPDATE FileUploadTable fu " +
