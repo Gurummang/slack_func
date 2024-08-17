@@ -42,7 +42,7 @@ public class SlackFileMapper {
                 .collect(Collectors.toList());
     }
 
-    public FileUploadTable toFileUploadEntity(File file, OrgSaaS orgSaas, String hash) {
+    public FileUploadTable toFileUploadEntity(File file, OrgSaaS orgSaas, String hash, LocalDateTime timestamp) {
         if (file == null) {
             return null;
         }
@@ -50,7 +50,7 @@ public class SlackFileMapper {
                 .orgSaaS(orgSaas)
                 .saasFileId(file.getId())
                 .hash(hash)
-                .timestamp(LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.systemDefault()))
+                .timestamp(timestamp != null ? timestamp : LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.systemDefault()))
                 .build();
     }
 

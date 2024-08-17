@@ -126,6 +126,11 @@ public class FileUtil {
         log.info("file event type : {}", event_type);
         String hash = calculateHash(fileData);
         String workspaceName = worekSpaceRepo.findById(workspaceId).get().getWorkspaceName();
+        LocalDateTime changeTime = null;
+        if (event_type.length()>12){
+            event_type = event_type.substring(0,12);
+            changeTime = event_type.substring(13).length() > 0 ? LocalDateTime.parse(event_type.substring(13)) : null;
+        }
 
         // 채널 및 사용자 정보 가져오기
         String channelId = getFirstChannelId(file);
@@ -147,7 +152,7 @@ public class FileUtil {
         String s3Key = String.format("%s/%s/%s/%s/%s/%s", orgName, saasName, workspaceName, channelName, hash, file.getTitle());
 
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
-        FileUploadTable fileUploadTableObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash);
+        FileUploadTable fileUploadTableObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash, changeTime);
         Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath);
 
         synchronized (this) {
