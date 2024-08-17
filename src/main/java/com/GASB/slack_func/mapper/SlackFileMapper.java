@@ -74,7 +74,7 @@ public class SlackFileMapper {
                 .user(slackUserRepo.findByUserId(user_id).orElse(null))
                 .eventType(eventType)
                 .saasFileId(file_id)
-                .uploadChannel(null)
+                .uploadChannel("deleted")
                 .build();
     }
 }

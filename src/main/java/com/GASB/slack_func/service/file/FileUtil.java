@@ -122,6 +122,8 @@ public class FileUtil {
     }
 
     private Void handleFileProcessing(File file, OrgSaaS orgSaaSObject, byte[] fileData, int workspaceId, String event_type) throws IOException, NoSuchAlgorithmException {
+        log.info("Processing file: {}", file.getName());
+        log.info("file event type : {}", event_type);
         String hash = calculateHash(fileData);
         String workspaceName = worekSpaceRepo.findById(workspaceId).get().getWorkspaceName();
 
@@ -147,6 +149,7 @@ public class FileUtil {
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
         FileUploadTable fileUploadTableObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash);
         Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath);
+
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
             if (activityDuplicate(activity)) {
