@@ -8,6 +8,7 @@ import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.WorkspaceConfigRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
+import com.GASB.slack_func.service.AESUtil;
 import com.GASB.slack_func.service.MessageSender;
 import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
@@ -68,12 +69,15 @@ public class FileUtil {
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
+
+    @Value("${aes.key}")
+    private String key;
     private static final String HASH_ALGORITHM = "SHA-256";
 
     @Async("threadPoolTaskExecutor")
     @Transactional
     public CompletableFuture<Void> processAndStoreFile(File file, OrgSaaS orgSaaSObject, int workspaceId, String event_type) {
-        return downloadFileAsync(file.getUrlPrivateDownload(), getToken(workspaceId))
+        return downloadFileAsync(file.getUrlPrivateDownload(), AESUtil.decrypt(getToken(workspaceId),key))
                 .thenApply(fileData -> {
                     try {
                         return handleFileProcessing(file, orgSaaSObject, fileData, workspaceId, event_type);
@@ -194,7 +198,9 @@ public class FileUtil {
 
     public static String calculateHash(byte[] fileData) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance(HASH_ALGORITHM);
+        log.info("Hash value : {} ", digest);
         byte[] hash = digest.digest(fileData);
+
         return bytesToHex(hash);
     }
 
@@ -206,7 +212,6 @@ public class FileUtil {
         }
         return hexString.toString();
     }
-
     private String saveFileToLocal(byte[] fileData, String saasName, String workspaceName, String channelName, String hash, String fileName) throws IOException {
         // Ensure input parameters are not null
         if (fileData == null || saasName == null || workspaceName == null || channelName == null || hash == null || fileName == null) {
@@ -219,11 +224,6 @@ public class FileUtil {
         String sanitizedChannelName = sanitizePathSegment(channelName);
         String sanitizedHash = sanitizePathSegment(hash);
         String sanitizedFileName = sanitizeFileName(fileName);
-
-        // Ensure sanitized values are not null
-        if (sanitizedSaasName == null || sanitizedWorkspaceName == null || sanitizedChannelName == null || sanitizedHash == null || sanitizedFileName == null) {
-            throw new IllegalArgumentException("Sanitized values cannot be null");
-        }
 
         // Build the file path
         Path basePath = Paths.get("downloaded_files");
