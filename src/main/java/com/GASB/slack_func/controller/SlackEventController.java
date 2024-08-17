@@ -40,13 +40,13 @@ public class SlackEventController {
         return ResponseEntity.ok("File Event received and logged");
     }
 
-    @PostMapping("/file-changed")
+    @PostMapping("/file-change")
     public ResponseEntity<String> handleFileChangeEvent(@RequestBody Map<String, Object> payload) {
         slackFileEvent.handleFileEvent(payload, "file_changed");
         return ResponseEntity.ok("File Change Event received and logged");
     }
 
-    @PostMapping("/file-deleted")
+    @PostMapping("/file-delete")
     public ResponseEntity<String> handleFileDeleteEvent(@RequestBody Map<String, Object> payload) {
         slackFileEvent.handleFileDeleteEvent(payload);
         return ResponseEntity.ok("File Delete Event received and logged");
