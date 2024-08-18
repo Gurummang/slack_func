@@ -22,6 +22,7 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
             "JOIN StoredFile sf ON fu.hash = sf.saltedHash " +
             "JOIN MonitoredUsers u ON a.user.userId = u.userId " +
             "WHERE os.org.id = :orgId AND os.saas.id = :saasId " +
+            "AND a.eventType = 'file_upload' " +  // 조건 추가
             "ORDER BY fu.timestamp DESC LIMIT 10")
     List<SlackRecentFileDTO> findRecentFilesByOrgIdAndSaasId(@Param("orgId") int orgId, @Param("saasId") int saasId);
 
