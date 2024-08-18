@@ -69,11 +69,13 @@ public class SlackFileMapper {
                 .build();
     }
 
-    public Activities toActivityEntitiyForDeleteEvent(String file_id, String eventType, String user_id){
+    public Activities toActivityEntitiyForDeleteEvent(String file_id, String eventType, String user_id, String file_name, long timestamp){
         return Activities.builder()
                 .user(slackUserRepo.findByUserId(user_id).orElse(null))
                 .eventType(eventType)
                 .saasFileId(file_id)
+                .fileName(file_name)
+                .eventTs(LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault()))
                 .uploadChannel("deleted")
                 .build();
     }
