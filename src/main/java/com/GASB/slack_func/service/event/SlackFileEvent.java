@@ -35,10 +35,11 @@ public class SlackFileEvent {
             String spaceId = payload.get("teamId").toString();
             String fileId = payload.get("fileId").toString();
             String event = event_type;
-            if (payload.containsKey("event_ts")) {
+            if (payload.containsKey("timestamp")) {
                 StringBuilder eventBuilder = new StringBuilder(event);
-                event = eventBuilder.append(":").append(payload.get("event_ts").toString()).toString();
+                event = eventBuilder.append(":").append(payload.get("timestamp").toString()).toString();
             }
+            log.info("event : {}", event);
 
             OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(spaceId).orElse(null);
             File fileInfo = slackApiService.fetchFileInfo(fileId, orgSaaSObject.getId());
@@ -58,10 +59,15 @@ public class SlackFileEvent {
 
     public void handleFileDeleteEvent(Map<String, Object> payload) {
        try {
+           log.info("event_type : {}", payload.get("event"));
            // 1. activities 테이블에 deleted 이벤트로 추가
            String file_id = payload.get("fileId").toString();
-           String user_id = payload.get("userId").toString();
-           Activities activities = slackFileMapper.toActivityEntitiyForDeleteEvent(file_id, "file_delete", user_id);
+           String event_ts = payload.get("timestamp").toString();
+           long timestamp = Long.parseLong(event_ts.split("\\.")[0]);
+
+           String file_owner_id = fileActivityRepo.findUserBySaasFileId(file_id).orElse(null);
+           String file_name = fileActivityRepo.findFileNamesBySaasFileId(file_id).orElse(null);
+           Activities activities = slackFileMapper.toActivityEntitiyForDeleteEvent(file_id, "file_delete", file_owner_id, file_name, timestamp);
            fileActivityRepo.save(activities);
            // 2. file_upload 테이블에서 deleted 컬럼을 true로 변경
            fileUploadRepository.checkDelete(payload.get("fileId").toString());
