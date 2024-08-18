@@ -46,7 +46,7 @@ public interface SlackFileRepository extends JpaRepository<StoredFile, Long> {
             "INNER JOIN OrgSaaS os ON o.id = os.org.id "+
             "INNER JOIN Saas s ON os.saas.id = s.id "+
             "INNER JOIN FileUploadTable fu ON os.id = fu.orgSaaS.id "+
-            "WHERE o.id = :orgId AND s.id = :saasId")
+            "WHERE o.id = :orgId AND s.id = :saasId AND fu.deleted != true")
     int countTotalFiles(@Param("orgId") int orgId, @Param("saasId") int saasId);
 
     @Query("SELECT COUNT(fu.id) FROM Org o " +
@@ -54,7 +54,7 @@ public interface SlackFileRepository extends JpaRepository<StoredFile, Long> {
             "INNER JOIN Saas s ON os.saas.id = s.id " +
             "INNER JOIN FileUploadTable fu ON os.id = fu.orgSaaS.id " +
             "INNER JOIN DlpReport dr ON fu.hash = dr.storedFile.saltedHash " +
-            "WHERE o.id = :orgId AND s.id = :saasId AND dr.dlp = true")
+            "WHERE o.id = :orgId AND s.id = :saasId AND dr.dlp = true AND fu.deleted != true")
     int countSensitiveFiles(@Param("orgId") int orgId, @Param("saasId") int saasId);
 
     @Query("SELECT COUNT(fu.id) FROM Org o " +
@@ -62,7 +62,7 @@ public interface SlackFileRepository extends JpaRepository<StoredFile, Long> {
             "INNER JOIN Saas s ON os.saas.id = s.id " +
             "INNER JOIN FileUploadTable fu ON os.id = fu.orgSaaS.id " +
             "INNER JOIN VtReport vr ON fu.hash = vr.storedFile.saltedHash " +
-            "WHERE o.id = :orgId AND s.id = :saasId AND vr.threatLabel != 'none'")
+            "WHERE o.id = :orgId AND s.id = :saasId AND vr.threatLabel != 'none' AND fu.deleted != true")
     int countMaliciousFiles(@Param("orgId") int orgId, @Param("saasId") int saasId);
 
     @Query("SELECT COUNT(mu.userId) FROM Org o " +
