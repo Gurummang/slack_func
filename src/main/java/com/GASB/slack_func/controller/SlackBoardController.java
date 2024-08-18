@@ -97,12 +97,12 @@ public class SlackBoardController {
             }
 
             String email = (String) servletRequest.getAttribute("email");
-            // log.info("httpServletRequest: {}", servletRequest);
+             log.info("httpServletRequest: {}", servletRequest);
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
-            SlackFileCountDto slackFileCountDto = slackFileService.testCountSum(orgId,1);
+            SlackFileCountDto slackFileCountDto = slackFileService.SlackFileCountSum(orgId,1);
             return ResponseEntity.ok(slackFileCountDto);
         } catch (Exception e) {
-            // log.error("Error fetching file count", e);
+             log.error("Error fetching file count", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new SlackFileCountDto(0,0,0,0));
         }

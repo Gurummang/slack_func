@@ -18,4 +18,12 @@ public interface FileActivityRepo extends JpaRepository<Activities, Long>{
     @Query("SELECT a FROM Activities a WHERE a.eventTs = :eventTs AND a.eventType = :eventType")
     Optional<Activities> findByEventTsAndEventType(@Param("eventTs") LocalDateTime eventTs, @Param("eventType") String eventType);
 
+
+
+    @Query("SELECT a.user.userId FROM Activities a WHERE a.saasFileId = :fileId")
+    Optional<String> findUserBySaasFileId(@Param("fileId") String fileId);
+
+
+    @Query("SELECT a.fileName FROM Activities a WHERE a.saasFileId = :fileId")
+    Optional<String> findFileNamesBySaasFileId(@Param("fileId")String fileId);
 }

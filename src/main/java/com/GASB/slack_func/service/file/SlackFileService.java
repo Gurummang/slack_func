@@ -87,7 +87,7 @@ public class SlackFileService {
                 .build();
     }
 
-    public SlackFileCountDto testCountSum(int orgId, int saasId) {
+    public SlackFileCountDto SlackFileCountSum(int orgId, int saasId) {
         return SlackFileCountDto.builder()
                 .totalFiles(storedFilesRepository.countTotalFiles(orgId, saasId))
                 .sensitiveFiles(storedFilesRepository.countSensitiveFiles(orgId, saasId))
