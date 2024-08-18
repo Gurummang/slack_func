@@ -31,7 +31,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -127,9 +130,18 @@ public class FileUtil {
         String hash = calculateHash(fileData);
         String workspaceName = worekSpaceRepo.findById(workspaceId).get().getWorkspaceName();
         LocalDateTime changeTime = null;
-        if (event_type.length()>12){
-            event_type = event_type.substring(0,12);
-            changeTime = event_type.substring(13).length() > 0 ? LocalDateTime.parse(event_type.substring(13)) : null;
+        if (event_type.length() > 12) {
+            String[] event = event_type.split(":");
+            try {
+                // UNIX 타임스탬프가 포함된 경우
+                long timestamp = Long.parseLong(event[1].split("\\.")[0]); // 정수 부분만 사용
+                changeTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault());
+                log.info("changeTime : {}", changeTime);
+                event_type = event[0];
+            } catch (DateTimeParseException | NumberFormatException e) {
+                log.error("Failed to parse event timestamp: {}", event[1], e);
+                // 적절한 예외 처리 또는 기본 값 설정
+            }
         }
 
         // 채널 및 사용자 정보 가져오기
