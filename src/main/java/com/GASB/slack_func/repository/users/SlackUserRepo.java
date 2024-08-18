@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long> , SlackUserIF{
+public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long>{
     Optional<MonitoredUsers> findByUserId(String userId);
 
     boolean existsByUserId(String userId);
