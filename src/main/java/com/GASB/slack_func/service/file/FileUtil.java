@@ -169,29 +169,41 @@ public class FileUtil {
 
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
-            if (activityDuplicate(activity)) {
-                activitiesRepository.save(activity);
-            } else {
-                log.warn("Duplicate activity detected and ignored: {}", file.getName());
-            }
-
-            if (fileUploadDuplicate(fileUploadTableObject)) {
-                fileUploadRepository.save(fileUploadTableObject);
-            } else {
-                log.warn("Duplicate file upload detected and ignored: {}", file.getName());
-            }
-
-            if (isFileNotStored(storedFile)) {
-                try {
-                    storedFilesRepository.save(storedFile);
-                    messageSender.sendMessage(storedFile.getId());
-                    messageSender.sendGroupingMessage(activity.getId());
-                    log.info("File uploaded successfully: {}", file.getName());
-                } catch (DataIntegrityViolationException e) {
-                    log.warn("Duplicate entry detected and ignored: {}", file.getName());
+            try {
+                if (activityDuplicate(activity)) {
+                    activitiesRepository.save(activity);
+                } else {
+                    log.warn("Duplicate activity detected and ignored: {}", file.getName());
                 }
-            } else {
-                log.warn("Duplicate file detected: {}", file.getName());
+            } catch (DataIntegrityViolationException e) {
+                log.error("Error saving activity: {}", e.getMessage(), e);
+            }
+
+            try {
+                if (fileUploadDuplicate(fileUploadTableObject)) {
+                    fileUploadRepository.save(fileUploadTableObject);
+                } else {
+                    log.warn("Duplicate file upload detected and ignored: {}", file.getName());
+                }
+            } catch (DataIntegrityViolationException e) {
+                log.error("Error saving file upload: {}", e.getMessage(), e);
+            }
+
+            try {
+                if (isFileNotStored(storedFile)) {
+                    try {
+                        storedFilesRepository.save(storedFile);
+                        messageSender.sendMessage(storedFile.getId());
+                        messageSender.sendGroupingMessage(activity.getId());
+                        log.info("File uploaded successfully: {}", file.getName());
+                    } catch (DataIntegrityViolationException e) {
+                        log.warn("Duplicate entry detected and ignored: {}", file.getName());
+                    }
+                } else {
+                    log.warn("Duplicate file detected: {}", file.getName());
+                }
+            } catch (DataIntegrityViolationException e) {
+                log.error("Error saving file: {}", e.getMessage(), e);
             }
         }
         scanUtil.scanFile(filePath, fileUploadTableObject, file.getMimetype(), file.getFiletype());
