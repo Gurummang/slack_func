@@ -13,7 +13,8 @@ import java.util.Optional;
 public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long>{
     Optional<MonitoredUsers> findByUserId(String userId);
 
-    boolean existsByUserId(String userId);
+    @Query("SELECT EXISTS(SELECT 1 FROM MonitoredUsers u WHERE u.userId = :userId AND u.orgSaaS.id = :orgSaaSId)")
+    boolean existsByUserId(@Param("userId") String userId, @Param("orgSaaSId") int orgSaaSId);
 
 
     //DISTINCT : 중복된 값을 제거하는 키워드이다.
@@ -32,7 +33,7 @@ public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long>{
                     "JOIN " +
                     "    stored_file sf ON sf.salted_hash = fu.salted_hash " +
                     "JOIN " +
-                    "    activities a ON a.user_id = u.user_id AND a.saas_file_id = fu.saas_file_id " +
+                    "    activities a ON a.user_id = u.id AND a.saas_file_id = fu.saas_file_id " +
                     "LEFT JOIN " +
                     "    dlp_report dr ON sf.id = dr.file_id " +
                     "LEFT JOIN " +
@@ -51,6 +52,6 @@ public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long>{
     List<Object[]> findTopUsers(@Param("orgId") int orgId, @Param("saasId") int saasId);
 
 
-
-
+    @Query("SELECT u FROM MonitoredUsers u WHERE u.userId = :user_id AND u.orgSaaS.id = :orgSaaSId")
+    Optional<MonitoredUsers> findByUserIdAndOrgSaaSId(@Param("user_id") String userId, @Param("orgSaaSId") int orgSaaSId);
 }

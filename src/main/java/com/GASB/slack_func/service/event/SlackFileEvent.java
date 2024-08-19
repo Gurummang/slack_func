@@ -2,10 +2,12 @@ package com.GASB.slack_func.service.event;
 
 import com.GASB.slack_func.mapper.SlackFileMapper;
 import com.GASB.slack_func.model.entity.Activities;
+import com.GASB.slack_func.model.entity.MonitoredUsers;
 import com.GASB.slack_func.model.entity.OrgSaaS;
 import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
+import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.GASB.slack_func.service.SlackApiService;
 import com.GASB.slack_func.service.file.FileUtil;
 import com.slack.api.methods.SlackApiException;
@@ -28,6 +30,7 @@ public class SlackFileEvent {
     private final FileUploadRepository fileUploadRepository;
     private final SlackFileMapper slackFileMapper;
     private final FileActivityRepo fileActivityRepo;
+    private final SlackUserRepo slackUserRepo;
 
     public void handleFileEvent(Map<String, Object> payload, String event_type) {
         log.info("Handling file event with payload: {}", payload);
@@ -63,11 +66,26 @@ public class SlackFileEvent {
            // 1. activities 테이블에 deleted 이벤트로 추가
            String file_id = payload.get("fileId").toString();
            String event_ts = payload.get("timestamp").toString();
+           String file_owner_id= null, file_name = null;
+
            long timestamp = Long.parseLong(event_ts.split("\\.")[0]);
 
-           String file_owner_id = fileActivityRepo.findUserBySaasFileId(file_id).orElse(null);
-           String file_name = fileActivityRepo.findFileNamesBySaasFileId(file_id).orElse(null);
-           Activities activities = slackFileMapper.toActivityEntitiyForDeleteEvent(file_id, "file_delete", file_owner_id, file_name, timestamp);
+           int org_saas_id = fileUploadRepository.findOrgSaaSIdByFileId(Long.parseLong(file_id));
+
+
+           try {
+               file_owner_id = fileActivityRepo.findUserBySaasFileId(file_id).orElse(null);
+           } catch (Exception e) {
+               log.error("Error fetching file owner ID", e);
+           }
+           try {
+               file_name = fileActivityRepo.findFileNamesBySaasFileId(file_id).orElse(null);
+           } catch (Exception e) {
+                log.error("Error fetching file name", e);
+           }
+
+           MonitoredUsers userObject = slackUserRepo.findByUserIdAndOrgSaaSId(file_owner_id, org_saas_id).orElse(null);
+           Activities activities = slackFileMapper.toActivityEntitiyForDeleteEvent(file_id, "file_delete", userObject, file_name, timestamp);
            fileActivityRepo.save(activities);
            // 2. file_upload 테이블에서 deleted 컬럼을 true로 변경
            fileUploadRepository.checkDelete(payload.get("fileId").toString());

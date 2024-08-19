@@ -20,16 +20,15 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
             "JOIN OrgSaaS os ON fu.orgSaaS.id = os.id " +
             "JOIN Activities a ON fu.saasFileId = a.saasFileId " +
             "JOIN StoredFile sf ON fu.hash = sf.saltedHash " +
-            "JOIN MonitoredUsers u ON a.user.userId = u.userId " +
+            "JOIN MonitoredUsers u ON a.user.id = u.id " +
             "WHERE os.org.id = :orgId AND os.saas.id = :saasId " +
             "AND a.eventType = 'file_upload' " +  // 조건 추가
             "ORDER BY fu.timestamp DESC LIMIT 10")
     List<SlackRecentFileDTO> findRecentFilesByOrgIdAndSaasId(@Param("orgId") int orgId, @Param("saasId") int saasId);
 
-    // Corrected method to find by OrgSaaS fields
 
-    Optional<FileUploadTable> findBySaasFileIdAndTimestamp(String saasFileId, LocalDateTime timestamp);
-
+    @Query("SELECT fu.orgSaaS.id FROM FileUploadTable fu WHERE fu.id = :fileId")
+    int findOrgSaaSIdByFileId(@Param("fileId") Long fileId);
     @Query("SELECT f FROM FileUploadTable f WHERE f.timestamp = :timestamp AND f.hash = :hash")
     Optional<FileUploadTable> findByTimestampAndHash(@Param("timestamp") LocalDateTime timestamp, @Param("hash") String hash);
     @Transactional

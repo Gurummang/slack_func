@@ -4,6 +4,7 @@ import com.GASB.slack_func.mapper.SlackUserMapper;
 import com.GASB.slack_func.model.dto.TopUserDTO;
 import com.GASB.slack_func.model.entity.MonitoredUsers;
 import com.GASB.slack_func.model.entity.OrgSaaS;
+import com.GASB.slack_func.repository.channel.SlackChannelRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.slack.api.methods.SlackApiException;
@@ -30,6 +31,7 @@ public class SlackUserService {
     private final SlackUserMapper slackUserMapper;
     private final SlackUserRepo slackUserRepo;
     private final OrgSaaSRepo orgSaaSRepo;
+    private final SlackChannelRepository slackChannelRepository;
 
     @Async("threadPoolTaskExecutor")
     public CompletableFuture<Void> slackFirstUsers(int workspace_config_id) {
@@ -40,9 +42,7 @@ public class SlackUserService {
                     .orElseThrow(() -> new IllegalArgumentException("OrgSaas not found with spaceId: " + workspace_config_id));
             try {
                 slackUsers = slackApiService.fetchUsers(workspace_config_id).stream().filter(user -> !user.isBot()).collect(Collectors.toList());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (SlackApiException e) {
+            } catch (IOException | SlackApiException e) {
                 throw new RuntimeException(e);
             }
             int orgSaaSId = orgSaaSObject.getId();
@@ -51,7 +51,7 @@ public class SlackUserService {
 
             // 중복된 user_id를 제외하고 저장할 사용자 목록 생성
             List<MonitoredUsers> filteredUsers = monitoredUsers.stream()
-                    .filter(user -> !slackUserRepo.existsByUserId(user.getUserId()))
+                    .filter(user -> !slackUserRepo.existsByUserId(user.getUserId(),orgSaaSId))
                     .collect(Collectors.toList());
 
             slackUserRepo.saveAll(filteredUsers);
@@ -64,9 +64,15 @@ public class SlackUserService {
     @Async("threadPoolTaskExecutor")
     public CompletableFuture<Void> addUser(User user) {
         return CompletableFuture.runAsync(() -> {
+            int org_saas_id = slackChannelRepository.findOrgSaaSIdByChannelId(user.getTeamId());
             MonitoredUsers monitoredUser = slackUserMapper.toEntity(user, 1);
-            if (!slackUserRepo.existsByUserId(monitoredUser.getUserId())) {
-                slackUserRepo.save(monitoredUser);
+            if (!slackUserRepo.existsByUserId(monitoredUser.getUserId(), org_saas_id)) {
+                try {
+                    slackUserRepo.save(monitoredUser);
+                } catch (Exception e) {
+                    log.error("Error saving user", e);
+                    log.error("User: {}", monitoredUser.toString());
+                }
             }
         });
     }
