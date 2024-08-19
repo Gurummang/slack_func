@@ -20,7 +20,7 @@ public interface FileActivityRepo extends JpaRepository<Activities, Long>{
 
 
 
-    @Query("SELECT a.user.userId FROM Activities a WHERE a.saasFileId = :fileId")
+    @Query("SELECT a.user.userId FROM Activities a WHERE a.saasFileId = :fileId AND a.eventType = 'file_upload'")
     Optional<String> findUserBySaasFileId(@Param("fileId") String fileId);
 
 
