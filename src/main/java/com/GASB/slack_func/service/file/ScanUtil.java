@@ -47,8 +47,7 @@ public class ScanUtil {
                     // 확장자와 MIME타입만 검사함
                     isMatched = checkWithoutSignature(mimeType, expectedMimeType, fileExtension);
                     addData(fileUploadTableObject, isMatched, mimeType, "unknown", fileExtension);
-                }
-                if (fileSignature == null || fileSignature.isEmpty()) {
+                } else if(fileSignature == null || fileSignature.isEmpty()) {
                     // 확장자와 MIME 타입만 존재하는 경우
                     isMatched = checkWithoutSignature(mimeType, expectedMimeType, fileExtension);
                     addData(fileUploadTableObject, isMatched, mimeType, "unknown", fileExtension);
