@@ -29,7 +29,7 @@ public class SlackChannelEvent {
             String spaceId = payload.get("teamId").toString();
             String channdlId = payload.get("channelId").toString();
 
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(spaceId).get();
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceIdUsingQuery(spaceId).get();
             Conversation new_conversation = slackApiService.fetchConversationInfo(channdlId,orgSaaSObject);
             slackChannelService.addChannel(new_conversation,orgSaaSObject);
             log.info("Channel event processed successfully");
