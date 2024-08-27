@@ -55,7 +55,7 @@ public class SlackFileMapper {
     }
 
 
-    public Activities toActivityEntity(File file, String eventType, MonitoredUsers user, String channel) {
+    public Activities toActivityEntity(File file, String eventType, MonitoredUsers user, String channel, String tlsh) {
         if (file == null) {
             return null;
         }
@@ -66,6 +66,7 @@ public class SlackFileMapper {
                 .fileName(file.getTitle())
                 .eventTs(LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.systemDefault()))
                 .uploadChannel(file.getChannels().isEmpty() ? null : channel)
+                .tlsh(tlsh)
                 .build();
     }
 

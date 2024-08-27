@@ -17,6 +17,8 @@ public interface SlackUserRepo extends JpaRepository<MonitoredUsers, Long>{
     boolean existsByUserId(@Param("userId") String userId, @Param("orgSaaSId") int orgSaaSId);
 
 
+
+
     //DISTINCT : 중복된 값을 제거하는 키워드이다.
     @Query(nativeQuery = true, value =
             "SELECT " +

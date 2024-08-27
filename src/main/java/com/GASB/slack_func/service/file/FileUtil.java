@@ -10,6 +10,8 @@ import com.GASB.slack_func.repository.org.WorkspaceConfigRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.GASB.slack_func.service.AESUtil;
 import com.GASB.slack_func.service.MessageSender;
+import com.GASB.slack_func.tlsh.Tlsh;
+import com.GASB.slack_func.tlsh.TlshCreator;
 import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +27,9 @@ import org.springframework.web.client.RestTemplate;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -128,6 +132,7 @@ public class FileUtil {
         log.info("Processing file: {}", file.getName());
         log.info("file event type : {}", event_type);
         String hash = calculateHash(fileData);
+        String tlsh = computeTlsHash(fileData).toString();
         String workspaceName = worekSpaceRepo.findById(workspaceId).get().getWorkspaceName();
         LocalDateTime changeTime = null;
         if (event_type.length() > 12) {
@@ -165,13 +170,14 @@ public class FileUtil {
 
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
         FileUploadTable fileUploadTableObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash, changeTime);
-        Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath);
+        Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath, tlsh);
 
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
             try {
-                if (activityDuplicate(activity)) {
+                if (!activitiesRepository.existsBySaasFileIdAndEventTs(activity.getSaasFileId(), activity.getEventTs())) {
                     activitiesRepository.save(activity);
+                    messageSender.sendGroupingMessage(activity.getId());
                 } else {
                     log.warn("Duplicate activity detected and ignored: {}", file.getName());
                 }
@@ -180,7 +186,7 @@ public class FileUtil {
             }
 
             try {
-                if (fileUploadDuplicate(fileUploadTableObject)) {
+                if (!fileUploadRepository.existsBySaasFileIdAndTimestamp(fileUploadTableObject.getSaasFileId(), fileUploadTableObject.getTimestamp())) {
                     fileUploadRepository.save(fileUploadTableObject);
                 } else {
                     log.warn("Duplicate file upload detected and ignored: {}", file.getName());
@@ -190,11 +196,10 @@ public class FileUtil {
             }
 
             try {
-                if (isFileNotStored(storedFile)) {
+                if (!storedFilesRepository.existsBySaltedHash(storedFile.getSaltedHash())) {
                     try {
                         storedFilesRepository.save(storedFile);
                         messageSender.sendMessage(storedFile.getId());
-                        messageSender.sendGroupingMessage(activity.getId());
                         log.info("File uploaded successfully: {}", file.getName());
                     } catch (DataIntegrityViolationException e) {
                         log.warn("Duplicate entry detected and ignored: {}", file.getName());
@@ -342,5 +347,25 @@ public class FileUtil {
         return worekSpaceRepo.findById(workespaceId)
                 .orElseThrow(() -> new NoSuchElementException("No token found for spaceId: " + workespaceId))
                 .getToken();
+    }
+
+    private Tlsh computeTlsHash(byte[] fileData) throws IOException {
+        if (fileData == null) {
+            throw new IllegalArgumentException("fileData cannot be null");
+        }
+        final int BUFFER_SIZE = 4096;
+        TlshCreator tlshCreator = new TlshCreator();
+
+        try (InputStream is = new ByteArrayInputStream(fileData)) {
+            byte[] buf = new byte[BUFFER_SIZE];
+            int bytesRead;
+            while ((bytesRead = is.read(buf)) != -1) {
+                tlshCreator.update(buf, 0, bytesRead);
+            }
+        } catch (IOException e) {
+            throw new IOException("Error computing TLSH hash", e);
+        }
+
+        return tlshCreator.getHash();
     }
 }
