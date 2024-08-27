@@ -57,6 +57,8 @@
 
 package com.GASB.slack_func.tlsh;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Arrays;
 
 /**
@@ -79,6 +81,7 @@ import java.util.Arrays;
  * System.out.println("Hash is " + hash.getEncoded());
  * </pre>
  */
+@Slf4j
 public class TlshCreator {
 	private static final int SLIDING_WND_SIZE = 5;
 	private static final int BUCKETS = 256;
@@ -419,7 +422,7 @@ public class TlshCreator {
 	 * @see #getHash(boolean)
 	 */
 	public Tlsh getHash() {
-		return getHash(false);
+		return getHash(true);
 	}
 
 	/**
@@ -520,24 +523,40 @@ public class TlshCreator {
 	 * @return if enough data has been processed to produce a TLSH structure
 	 */
 	public boolean isValid(boolean force) {
-		// incoming data must be more than or equal to MIN_DATA_LENGTH bytes
-		if (data_len < MIN_FORCE_DATA_LENGTH || (!force && data_len < MIN_DATA_LENGTH)) {
-			return false;
-		}
+		try {
+			// incoming data must be more than or equal to MIN_DATA_LENGTH bytes
+			if (data_len < MIN_FORCE_DATA_LENGTH || (!force && data_len < MIN_DATA_LENGTH)) {
+				log.warn("Data length is too short: {}", data_len);
+				return false;
+			}
 
-		// buckets must be more than 50% non-zero
-		int nonzero = 0;
-		for (int i = 0; i < bucketCount; i++) {
-			if (a_bucket[i] > 0) nonzero++;
-		}
-		if (nonzero <= (bucketCount >> 1)) {
-			return false;
-		}
-		if (data_len > MAX_DATA_LENGTH) {
-			return false;
-		}
+			// buckets must be more than 50% non-zero
+			int nonzero = 0;
+			for (int i = 0; i < bucketCount; i++) {
+				if (a_bucket[i] > 0) nonzero++;
+			}
+			if (nonzero <= (bucketCount >> 1)) {
+				log.warn("Too few non-zero buckets: {}", nonzero);
+				return false;
+			}
 
-		return true;
+			if (data_len > MAX_DATA_LENGTH) {
+				log.warn("Data length is too long: {}", data_len);
+				return false;
+			}
+
+			return true;
+
+		} catch (ArrayIndexOutOfBoundsException e) {
+			// 배열 인덱스 초과 예외 처리
+			log.error("Array index out of bounds during validation: {}", e.getMessage(), e);
+			return false;
+		} catch (Exception e) {
+			// 기타 예외 처리
+			log.error("Unexpected error during validation: {}", e.getMessage(), e);
+			return false;
+		}
 	}
+
 
 }
