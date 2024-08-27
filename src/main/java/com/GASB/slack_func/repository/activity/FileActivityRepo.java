@@ -15,7 +15,6 @@ public interface FileActivityRepo extends JpaRepository<Activities, Long>{
     Optional<Activities> findByEventTsAndEventType(@Param("eventTs") LocalDateTime eventTs, @Param("eventType") String eventType);
 
 
-
     @Query("SELECT a.user.userId FROM Activities a WHERE a.saasFileId = :fileId AND a.eventType = 'file_upload'")
     Optional<String> findUserBySaasFileId(@Param("fileId") String fileId);
 
@@ -25,6 +24,8 @@ public interface FileActivityRepo extends JpaRepository<Activities, Long>{
     //new - 2024.08.27
     @Query("SELECT COUNT(a) > 0 FROM Activities a WHERE a.saasFileId = :saasFileId AND a.eventTs = :eventTs")
     boolean existsBySaasFileIdAndEventTs(@Param("saasFileId") String saasFileId, @Param("eventTs") LocalDateTime eventTs);
+
+
 
     @Query("SELECT a FROM Activities a JOIN FileUploadTable fu ON a.saasFileId =fu.saasFileId WHERE a.saasFileId = :saasFileId AND a.eventType != 'file_delete' AND fu.deleted = false ORDER BY a.eventTs DESC LIMIT 1")
     Optional<Activities> findBySaasFileId(@Param("saasFileId") String saasFileId);

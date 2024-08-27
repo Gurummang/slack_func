@@ -175,7 +175,7 @@ public class FileUtil {
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
             try {
-                if (!activitiesRepository.existsBySaasFileIdAndEventTs(activity.getSaasFileId(), activity.getEventTs())) {
+                if (activityDuplicate(activity)) {
                     activitiesRepository.save(activity);
                     messageSender.sendGroupingMessage(activity.getId());
                 } else {
@@ -186,7 +186,7 @@ public class FileUtil {
             }
 
             try {
-                if (!fileUploadRepository.existsBySaasFileIdAndTimestamp(fileUploadTableObject.getSaasFileId(), fileUploadTableObject.getTimestamp())) {
+                if (fileUploadDuplicate(fileUploadTableObject)) {
                     fileUploadRepository.save(fileUploadTableObject);
                 } else {
                     log.warn("Duplicate file upload detected and ignored: {}", file.getName());
@@ -196,7 +196,7 @@ public class FileUtil {
             }
 
             try {
-                if (!storedFilesRepository.existsBySaltedHash(storedFile.getSaltedHash())) {
+                if (isFileNotStored(storedFile)) {
                     try {
                         storedFilesRepository.save(storedFile);
                         messageSender.sendMessage(storedFile.getId());
