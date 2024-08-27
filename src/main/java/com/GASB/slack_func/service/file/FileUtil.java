@@ -175,8 +175,9 @@ public class FileUtil {
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
             try {
-                if (activityDuplicate(activity)) {
+                if (!activitiesRepository.existsBySaasFileIdAndEventTs(activity.getSaasFileId(), activity.getEventTs())) {
                     activitiesRepository.save(activity);
+                    messageSender.sendGroupingMessage(activity.getId());
                 } else {
                     log.warn("Duplicate activity detected and ignored: {}", file.getName());
                 }
@@ -185,7 +186,7 @@ public class FileUtil {
             }
 
             try {
-                if (fileUploadDuplicate(fileUploadTableObject)) {
+                if (!fileUploadRepository.existsBySaasFileIdAndTimestamp(fileUploadTableObject.getSaasFileId(), fileUploadTableObject.getTimestamp())) {
                     fileUploadRepository.save(fileUploadTableObject);
                 } else {
                     log.warn("Duplicate file upload detected and ignored: {}", file.getName());
@@ -195,11 +196,10 @@ public class FileUtil {
             }
 
             try {
-                if (isFileNotStored(storedFile)) {
+                if (!storedFilesRepository.existsBySaltedHash(storedFile.getSaltedHash())) {
                     try {
                         storedFilesRepository.save(storedFile);
                         messageSender.sendMessage(storedFile.getId());
-                        messageSender.sendGroupingMessage(activity.getId());
                         log.info("File uploaded successfully: {}", file.getName());
                     } catch (DataIntegrityViolationException e) {
                         log.warn("Duplicate entry detected and ignored: {}", file.getName());
