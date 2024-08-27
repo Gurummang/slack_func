@@ -8,6 +8,7 @@ import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.repository.users.SlackUserRepo;
+import com.GASB.slack_func.service.MessageSender;
 import com.GASB.slack_func.service.SlackApiService;
 import com.GASB.slack_func.service.file.FileUtil;
 import com.slack.api.methods.SlackApiException;
@@ -31,6 +32,7 @@ public class SlackFileEvent {
     private final SlackFileMapper slackFileMapper;
     private final FileActivityRepo fileActivityRepo;
     private final SlackUserRepo slackUserRepo;
+    private final MessageSender messageSender;
 
     public void handleFileEvent(Map<String, Object> payload, String event_type) {
         log.info("Handling file event with payload: {}", payload);
@@ -44,7 +46,7 @@ public class SlackFileEvent {
             }
             log.info("event : {}", event);
 
-            OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceId(spaceId).orElse(null);
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceIdUsingQuery(spaceId).orElse(null);
             File fileInfo = slackApiService.fetchFileInfo(fileId, orgSaaSObject.getId());
             if (fileInfo.getMode() == "quip" || fileInfo.getPrettyType() == "캔버스" || fileInfo.getPrettyType() == "canvas"){
                 log.info("File is a quip or canvas file, skipping processing");
@@ -70,7 +72,7 @@ public class SlackFileEvent {
 
            long timestamp = Long.parseLong(event_ts.split("\\.")[0]);
 
-           int org_saas_id = fileUploadRepository.findOrgSaaSIdByFileId(Long.parseLong(file_id));
+           int org_saas_id = fileUploadRepository.findLatestOrgSaaSIdByFileId(file_id);
 
 
            try {
@@ -89,6 +91,7 @@ public class SlackFileEvent {
            fileActivityRepo.save(activities);
            // 2. file_upload 테이블에서 deleted 컬럼을 true로 변경
            fileUploadRepository.checkDelete(payload.get("fileId").toString());
+           messageSender.sendGroupingMessage(activities.getId());
        } catch (Exception e) {
            log.error("Error processing file delete event", e);
        }
