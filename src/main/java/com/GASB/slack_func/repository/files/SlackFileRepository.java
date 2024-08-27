@@ -71,4 +71,6 @@ public interface SlackFileRepository extends JpaRepository<StoredFile, Long> {
             "INNER JOIN MonitoredUsers mu ON os.id = mu.orgSaaS.id " +
             "WHERE o.id = :orgId AND s.id = :saasId")
     int countConnectedAccounts(@Param("orgId") int orgId, @Param("saasId") int saasId);
+
+    boolean existsBySaltedHash(String saltedHash);
 }
