@@ -2,7 +2,6 @@ package com.GASB.slack_func.service.event;
 
 import com.GASB.slack_func.mapper.SlackFileMapper;
 import com.GASB.slack_func.model.entity.Activities;
-import com.GASB.slack_func.model.entity.MonitoredUsers;
 import com.GASB.slack_func.model.entity.OrgSaaS;
 import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
@@ -75,27 +74,10 @@ public class SlackFileEvent {
            String file_owner_id= null, file_name = null;
 
            long timestamp = Long.parseLong(event_ts.split("\\.")[0]);
-
-           int org_saas_id = fileUploadRepository.findLatestOrgSaaSIdByFileId(file_id);
-
-
-           try {
-               file_owner_id = fileActivityRepo.findUserBySaasFileId(file_id).orElse(null);
-           } catch (Exception e) {
-               log.error("Error fetching file owner ID", e);
-           }
-           try {
-               file_name = fileActivityRepo.findFileNamesBySaasFileId(file_id).orElse(null);
-           } catch (Exception e) {
-                log.error("Error fetching file name", e);
-           }
-
-           MonitoredUsers userObject = slackUserRepo.findByUserIdAndOrgSaaSId(file_owner_id, org_saas_id).orElse(null);
-//           Activities activities = slackFileMapper.toActivityEntitiyForDeleteEvent(file_id, "file_delete", userObject, file_name, timestamp);
            Activities activities = copyForDelete(file_id, timestamp);
            fileActivityRepo.save(activities);
            // 2. file_upload 테이블에서 deleted 컬럼을 true로 변경
-           fileUploadRepository.checkDelete(payload.get("fileId").toString());
+           fileUploadRepository.checkDelete(file_id);
            messageSender.sendGroupingMessage(activities.getId());
        } catch (Exception e) {
            log.error("Error processing file delete event", e);
@@ -105,14 +87,23 @@ public class SlackFileEvent {
     private Activities copyForDelete(String file_id, long timestamp){
         Activities activities = fileActivityRepo.findRecentBySaasFileId(file_id).orElse(null);
 
+        // timestamp가 0일 경우, 현재 시간을 사용할 수 있도록 처리
+        LocalDateTime adjustedTimestamp;
+        if (timestamp > 0) {
+            adjustedTimestamp = LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.of("Asia/Seoul"));
+        } else {
+            adjustedTimestamp = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        }
+
         return Activities.builder()
                 .user(activities.getUser())
                 .eventType("file_delete")
-                .saasFileId(activities.getSaasFileId())
+                .saasFileId(file_id)
                 .fileName(activities.getFileName())
-                .eventTs(LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.of("Asia/Seoul")))
+                .eventTs(adjustedTimestamp)
                 .uploadChannel(activities.getUploadChannel())
                 .tlsh(activities.getTlsh())
                 .build();
     }
+
 }
