@@ -140,7 +140,7 @@ public class FileUtil {
             try {
                 // UNIX 타임스탬프가 포함된 경우
                 long timestamp = Long.parseLong(event[1].split("\\.")[0]); // 정수 부분만 사용
-                changeTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.of("Asia/Seoul"));
+                changeTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault());
                 log.info("changeTime : {}", changeTime);
                 event_type = event[0];
             } catch (DateTimeParseException | NumberFormatException e) {
@@ -175,11 +175,11 @@ public class FileUtil {
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
             try {
-                if (activityDuplicate(activity)) {
+                if (!activitiesRepository.existsBySaasFileIdAndEventTs(activity.getSaasFileId(), activity.getEventTs(), activity.getEventType())){
                     activitiesRepository.save(activity);
                     messageSender.sendGroupingMessage(activity.getId());
                 } else {
-                    log.warn("Duplicate activity detected and ignored: {}", file.getName());
+                    log.warn("Duplicate activity detected and ignored in Activities Table: {}", file.getName());
                 }
             } catch (DataIntegrityViolationException e) {
                 log.error("Error saving activity: {}", e.getMessage(), e);
@@ -189,7 +189,7 @@ public class FileUtil {
                 if (fileUploadDuplicate(fileUploadTableObject)) {
                     fileUploadRepository.save(fileUploadTableObject);
                 } else {
-                    log.warn("Duplicate file upload detected and ignored: {}", file.getName());
+                    log.warn("Duplicate file upload detected and ignored in fileUploadTable: {}", file.getName());
                 }
             } catch (DataIntegrityViolationException e) {
                 log.error("Error saving file upload: {}", e.getMessage(), e);
@@ -202,7 +202,7 @@ public class FileUtil {
                         messageSender.sendMessage(storedFile.getId());
                         log.info("File uploaded successfully: {}", file.getName());
                     } catch (DataIntegrityViolationException e) {
-                        log.warn("Duplicate entry detected and ignored: {}", file.getName());
+                        log.warn("Duplicate entry detected and ignored in StoredFileTable: {}", file.getName());
                     }
                 } else {
                     log.warn("Duplicate file detected: {}", file.getName());
