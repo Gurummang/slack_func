@@ -18,6 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Map;
 
 @Service
@@ -87,7 +90,8 @@ public class SlackFileEvent {
            }
 
            MonitoredUsers userObject = slackUserRepo.findByUserIdAndOrgSaaSId(file_owner_id, org_saas_id).orElse(null);
-           Activities activities = slackFileMapper.toActivityEntitiyForDeleteEvent(file_id, "file_delete", userObject, file_name, timestamp);
+//           Activities activities = slackFileMapper.toActivityEntitiyForDeleteEvent(file_id, "file_delete", userObject, file_name, timestamp);
+           Activities activities = copyForDelete(file_id, timestamp);
            fileActivityRepo.save(activities);
            // 2. file_upload 테이블에서 deleted 컬럼을 true로 변경
            fileUploadRepository.checkDelete(payload.get("fileId").toString());
@@ -95,5 +99,19 @@ public class SlackFileEvent {
        } catch (Exception e) {
            log.error("Error processing file delete event", e);
        }
+    }
+
+    private Activities copyForDelete(String file_id, long timestamp){
+        Activities activities = fileActivityRepo.findRecentBySaasFileId(file_id).orElse(null);
+
+        return Activities.builder()
+                .user(activities.getUser())
+                .eventType("file_delete")
+                .saasFileId(activities.getSaasFileId())
+                .fileName(activities.getFileName())
+                .eventTs(LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.of("Asia/Seoul")))
+                .uploadChannel(activities.getUploadChannel())
+                .tlsh(activities.getTlsh())
+                .build();
     }
 }
