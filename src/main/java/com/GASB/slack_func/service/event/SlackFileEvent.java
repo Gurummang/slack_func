@@ -46,6 +46,7 @@ public class SlackFileEvent {
             if (payload.containsKey("timestamp")) {
                 StringBuilder eventBuilder = new StringBuilder(event);
                 event = eventBuilder.append(":").append(payload.get("timestamp").toString()).toString();
+                eventBuilder = null;
             }
             log.info("event : {}", event);
 
