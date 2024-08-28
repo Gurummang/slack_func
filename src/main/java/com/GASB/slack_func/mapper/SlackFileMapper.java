@@ -46,25 +46,33 @@ public class SlackFileMapper {
         if (file == null) {
             return null;
         }
+        LocalDateTime adjustedTimestamp = timestamp != null
+                ? timestamp.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("Asia/Seoul")).toLocalDateTime()
+                : LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.of("Asia/Seoul"));
         return FileUploadTable.builder()
                 .orgSaaS(orgSaas)
                 .saasFileId(file.getId())
                 .hash(hash)
-                .timestamp(timestamp != null ? timestamp : LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.systemDefault()))
+                .timestamp(adjustedTimestamp)
                 .build();
     }
 
 
-    public Activities toActivityEntity(File file, String eventType, MonitoredUsers user, String channel, String tlsh) {
+    public Activities toActivityEntity(File file, String eventType, MonitoredUsers user, String channel, String tlsh, LocalDateTime timestamp) {
         if (file == null) {
             return null;
         }
+
+        LocalDateTime adjustedTimestamp = timestamp != null
+                ? timestamp.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("Asia/Seoul")).toLocalDateTime()
+                : LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.of("Asia/Seoul"));
+
         return Activities.builder()
                 .user(user)
                 .eventType(eventType)
                 .saasFileId(file.getId())
                 .fileName(file.getTitle())
-                .eventTs(LocalDateTime.ofInstant(Instant.ofEpochSecond(file.getTimestamp()), ZoneId.systemDefault()))
+                .eventTs(adjustedTimestamp)
                 .uploadChannel(file.getChannels().isEmpty() ? null : channel)
                 .tlsh(tlsh)
                 .build();
