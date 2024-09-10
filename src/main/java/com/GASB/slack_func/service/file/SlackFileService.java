@@ -50,6 +50,18 @@ public class SlackFileService {
             log.error("Error processing files", e);
         }
     }
+
+    public void fileDelete(int workspaceId){
+        try {
+            OrgSaaS orgSaaSObject = orgSaaSRepo.findById(workspaceId).orElse(null);
+            if (slackApiService.SlackFileDeleteApi(workspaceId,orgSaaSObject)){
+
+            }
+
+        } catch (Exception e){
+            log.error("Error processing file delete", e);
+        }
+    }
     private boolean shouldSkipFile(File file) {
         return "quip".equalsIgnoreCase(file.getMode()) ||
                 "캔버스".equalsIgnoreCase(file.getPrettyType()) ||

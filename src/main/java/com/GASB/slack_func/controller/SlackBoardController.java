@@ -239,4 +239,34 @@ public class SlackBoardController {
         }
     }
 
+    @PostMapping("/files/delete")
+    @ValidateJWT
+    public ResponseEntity<?> deleteFile(HttpServletRequest servletRequest, @RequestBody Map<String, String> request) {
+        // 아마 delete에는 해시값이 필요하지 않을까..?
+        try {
+            if (servletRequest.getAttribute("error") != null) {
+                String errorMessage = (String) servletRequest.getAttribute("error");
+                Map<String, String> errorResponse = new HashMap<>();
+                log.error("Error fetching user ranking in user-ranking api: {}", errorMessage);
+                errorResponse.put("status", "401");
+                errorResponse.put("error_message", errorMessage);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+
+            String email = (String) servletRequest.getAttribute("email");
+            int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
+            Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
+            Map<String, String> response = new HashMap<>();
+
+
+            response.put("status","200");
+            response.put("message","file deleted");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // log.error("Error fetching recent files", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonList(new TopUserDTO("Error", 0L, 0L, LocalDateTime.now())));
+        }
+    }
 }
