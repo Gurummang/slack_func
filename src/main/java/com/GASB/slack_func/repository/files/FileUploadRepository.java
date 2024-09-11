@@ -26,14 +26,7 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
             "ORDER BY fu.timestamp DESC LIMIT 10")
     List<SlackRecentFileDTO> findRecentFilesByOrgIdAndSaasId(@Param("orgId") int orgId, @Param("saasId") int saasId);
 
-    boolean existsBySaasFileIdAndTimestamp(String saasFileId, LocalDateTime timestamp);
 
-    @Query("SELECT fu.orgSaaS.id FROM FileUploadTable fu WHERE fu.saasFileId = :fileId ORDER BY fu.timestamp DESC LIMIT 1")
-    int findLatestOrgSaaSIdByFileId(@Param("fileId") String fileId);
-
-
-    @Query("SELECT fu.orgSaaS.id FROM FileUploadTable fu WHERE fu.id = :fileId")
-    int findOrgSaaSIdByFileId(@Param("fileId") Long fileId);
 
     @Query("SELECT f FROM FileUploadTable f WHERE f.timestamp = :timestamp AND f.hash = :hash")
     Optional<FileUploadTable> findByTimestampAndHash(@Param("timestamp") LocalDateTime timestamp, @Param("hash") String hash);
@@ -46,6 +39,14 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
     void checkDelete(@Param("saasFileId") String saasFileId);
 
 
+    @Query("SELECt fu FROM FileUploadTable fu WHERE fu.id = :idx")
+    Optional<FileUploadTable> findSaasfileIdByid(@Param("idx")int idx);
+
+    @Query("SELECT fu FROM FileUploadTable fu WHERE fu.hash = :file_hash")
+    Optional<FileUploadTable> findByFileHash(@Param("file_hash")String file_hash);
+
+    @Query("SELECT fu FROM FileUploadTable fu WHERE fu.hash = :file_hash AND fu.id = :idx")
+    Optional<FileUploadTable> findByIdAndFileHash(@Param("idx") int idx, @Param("file_hash")String file_hash);
 
 
     @Query("SELECT CASE WHEN COUNT(f) > 0 THEN true ELSE false END " +

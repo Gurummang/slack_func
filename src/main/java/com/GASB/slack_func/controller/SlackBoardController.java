@@ -252,15 +252,16 @@ public class SlackBoardController {
                 errorResponse.put("error_message", errorMessage);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
             }
-
-            String email = (String) servletRequest.getAttribute("email");
-            int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
-            Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
+            int fileUploadTableIdx = Integer.parseInt(request.get("id"));
+            String file_hash = request.get("file_hash");
             Map<String, String> response = new HashMap<>();
-
-
-            response.put("status","200");
-            response.put("message","file deleted");
+            if (slackFileService.fileDelete(fileUploadTableIdx,file_hash)){
+                response.put("status","200");
+                response.put("message","file deleted successful");
+            } else {
+                response.put("status","404");
+                response.put("message","file deleted failed");
+            }
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {

@@ -105,33 +105,19 @@ public class SlackApiService {
     }
 
 
-    public boolean SlackFileDeleteApi(int workspace_id, OrgSaaS OrgSaaSObject) {
+    public boolean SlackFileDeleteApi(int workspace_id, String file_id) {
         Slack slack = Slack.getInstance();
-
         try {
-            // 필요한 파일 ID를 OrgSaaSObject에서 가져온다고 가정
-            String fileId = fileUploadRepository.findSaaSFileIdByOrgSaaS(OrgSaaSObject.getId()).orElse(null);
-
-            if (fileId == null) {
-                // 파일 ID를 찾지 못한 경우
-                System.err.println("File ID not found for OrgSaaS ID: " + OrgSaaSObject.getId());
-                return false;
-            }
-
             // Slack 파일 삭제 API 호출
             FilesDeleteResponse response = slack.methods().filesDelete(FilesDeleteRequest.builder()
                     .token(AESUtil.decrypt(fileUtil.getToken(workspace_id), key)) // 토큰을 조직 객체에서 가져옴
-                    .file(fileId)
+                    .file(file_id)
                     .build());
-
             // 응답이 성공인지 확인
             if (!response.isOk()) {
                 System.err.println("Slack API Error: " + response.getError());
                 return false;
             }
-
-            // 성공적으로 삭제된 경우
-            System.out.println("File deleted successfully: " + fileId);
             return true;
 
         } catch (SlackApiException | IOException e) {
