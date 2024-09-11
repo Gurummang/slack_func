@@ -1,10 +1,13 @@
 package com.GASB.slack_func.service;
 
 import com.GASB.slack_func.model.entity.OrgSaaS;
+import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.service.file.FileUtil;
 import com.slack.api.Slack;
 import com.slack.api.methods.SlackApiException;
+import com.slack.api.methods.request.files.FilesDeleteRequest;
 import com.slack.api.methods.response.conversations.ConversationsListResponse;
+import com.slack.api.methods.response.files.FilesDeleteResponse;
 import com.slack.api.methods.response.files.FilesListResponse;
 import com.slack.api.methods.response.users.UsersListResponse;
 import com.slack.api.model.Conversation;
@@ -25,13 +28,16 @@ public class SlackApiService {
 
     private final AESUtil aesUtil;
 
+    private final FileUploadRepository fileUploadRepository;
+
     @Value("${aes.key}")
     private String key;
 
-    public SlackApiService(FileUtil fileUtil, AESUtil aesUtil) {
+    public SlackApiService(FileUtil fileUtil, AESUtil aesUtil, FileUploadRepository fileUploadRepository) {
         this.slack = Slack.getInstance();
         this.fileUtil = fileUtil;
         this.aesUtil = aesUtil;
+        this.fileUploadRepository = fileUploadRepository;
     }
     // ConversationsList API호출 메서드
     public List<Conversation> fetchConversations(int workspaceId) throws IOException, SlackApiException {
@@ -97,4 +103,28 @@ public class SlackApiService {
             throw new RuntimeException("Error fetching user info: " + usersInfoResponse.getError());
         }
     }
+
+
+    public boolean SlackFileDeleteApi(int workspace_id, String file_id) {
+        Slack slack = Slack.getInstance();
+        try {
+            // Slack 파일 삭제 API 호출
+            FilesDeleteResponse response = slack.methods().filesDelete(FilesDeleteRequest.builder()
+                    .token(AESUtil.decrypt(fileUtil.getToken(workspace_id), key)) // 토큰을 조직 객체에서 가져옴
+                    .file(file_id)
+                    .build());
+            // 응답이 성공인지 확인
+            if (!response.isOk()) {
+                System.err.println("Slack API Error: " + response.getError());
+                return false;
+            }
+            return true;
+
+        } catch (SlackApiException | IOException e) {
+            // Slack API 에러 또는 네트워크/I/O 에러 처리
+            System.err.println("Error occurred: " + e.getMessage());
+            return false;
+        }
+    }
+
 }
