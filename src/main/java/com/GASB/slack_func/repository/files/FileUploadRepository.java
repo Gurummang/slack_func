@@ -38,13 +38,6 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
             "WHERE fu.saasFileId = :saasFileId AND fu.id IS NOT NULL")
     void checkDelete(@Param("saasFileId") String saasFileId);
 
-
-    @Query("SELECt fu FROM FileUploadTable fu WHERE fu.id = :idx")
-    Optional<FileUploadTable> findSaasfileIdByid(@Param("idx")int idx);
-
-    @Query("SELECT fu FROM FileUploadTable fu WHERE fu.hash = :file_hash")
-    Optional<FileUploadTable> findByFileHash(@Param("file_hash")String file_hash);
-
     @Query("SELECT fu FROM FileUploadTable fu WHERE fu.hash = :file_hash AND fu.id = :idx")
     Optional<FileUploadTable> findByIdAndFileHash(@Param("idx") int idx, @Param("file_hash")String file_hash);
 
@@ -59,4 +52,8 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
     boolean existsByUserAndHash(@Param("email") String email,
                                 @Param("saasId") int saasId,
                                 @Param("saltedHash") String saltedHash);
+
+
+    @Query("SELECT fu.hash FROM FileUploadTable fu WHERE fu.saasFileId = :saas_file_id")
+    Optional<String> findFileHashByFileId(@Param("saas_file_id")String file_id);
 }

@@ -1,12 +1,11 @@
 package com.GASB.slack_func.service.event;
 
-import com.GASB.slack_func.mapper.SlackFileMapper;
 import com.GASB.slack_func.model.entity.Activities;
 import com.GASB.slack_func.model.entity.OrgSaaS;
 import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
+import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
-import com.GASB.slack_func.repository.users.SlackUserRepo;
 import com.GASB.slack_func.service.MessageSender;
 import com.GASB.slack_func.service.SlackApiService;
 import com.GASB.slack_func.service.file.FileUtil;
@@ -31,9 +30,9 @@ public class SlackFileEvent {
     private final SlackApiService slackApiService;
     private final OrgSaaSRepo orgSaaSRepo;
     private final FileUploadRepository fileUploadRepository;
-    private final SlackFileMapper slackFileMapper;
+    private final SlackFileRepository slackFileRepository;
     private final FileActivityRepo fileActivityRepo;
-    private final SlackUserRepo slackUserRepo;
+    private final FileUtil fileUtil;
     private final MessageSender messageSender;
 
     public void handleFileEvent(Map<String, Object> payload, String event_type) {
@@ -71,10 +70,14 @@ public class SlackFileEvent {
            // 1. activities 테이블에 deleted 이벤트로 추가
            String file_id = payload.get("fileId").toString();
            String event_ts = payload.get("timestamp").toString();
-           String file_owner_id= null, file_name = null;
-
            long timestamp = Long.parseLong(event_ts.split("\\.")[0]);
+           String file_hash = fileUploadRepository.findFileHashByFileId(file_id).orElse(null);
            Activities activities = copyForDelete(file_id, timestamp);
+
+           String s3Path = slackFileRepository.findSavePathByHash(file_hash).orElse(null);
+
+           fileUtil.deleteFileInS3(s3Path);
+
            fileActivityRepo.save(activities);
            // 2. file_upload 테이블에서 deleted 컬럼을 true로 변경
            fileUploadRepository.checkDelete(file_id);

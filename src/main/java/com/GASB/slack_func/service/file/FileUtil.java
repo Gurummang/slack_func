@@ -25,7 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -368,4 +370,39 @@ public class FileUtil {
 
         return tlshCreator.getHash();
     }
+
+
+    public void deleteFileInS3(String filePath) {
+        try {
+            // 삭제 요청 생성
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(filePath)
+                    .build();
+
+            // S3에서 파일 삭제
+            s3Client.deleteObject(deleteObjectRequest);
+            System.out.println("File deleted successfully from S3: " + key);
+
+        } catch (S3Exception e) {
+            // 예외 처리
+            System.err.println("Error deleting file from S3: " + e.awsErrorDetails().errorMessage());
+        }
+    }
+
+    public void deleteFileInLocal(String filePath) {
+        try {
+            // 파일 경로를 Path 객체로 변환
+            Path path = Paths.get(filePath);
+
+            // 파일 삭제
+            Files.delete(path);
+            log.info("File deleted successfully from local filesystem: {}", filePath);
+
+        } catch (IOException e) {
+            // 파일 삭제 중 예외 처리
+            log.info("Error deleting file from local filesystem: {}" , e.getMessage());
+        }
+    }
+
 }
