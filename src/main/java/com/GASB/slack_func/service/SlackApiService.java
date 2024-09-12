@@ -106,7 +106,6 @@ public class SlackApiService {
 
 
     public boolean SlackFileDeleteApi(int workspace_id, String file_id) {
-        Slack slack = Slack.getInstance();
         try {
             // Slack 파일 삭제 API 호출
             FilesDeleteResponse response = slack.methods().filesDelete(FilesDeleteRequest.builder()
