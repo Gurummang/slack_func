@@ -190,6 +190,7 @@ public class FileUtil {
             try {
                 if (fileUploadDuplicate(fileUploadTableObject)) {
                     fileUploadRepository.save(fileUploadTableObject);
+                    messageSender.sendMessage(fileUploadTableObject.getId());
                 } else {
                     log.warn("Duplicate file upload detected and ignored in fileUploadTable: {}", file.getName());
                 }
@@ -201,7 +202,6 @@ public class FileUtil {
                 if (isFileNotStored(storedFile)) {
                     try {
                         storedFilesRepository.save(storedFile);
-                        messageSender.sendMessage(storedFile.getId());
                         log.info("File uploaded successfully: {}", file.getName());
                     } catch (DataIntegrityViolationException e) {
                         log.warn("Duplicate entry detected and ignored in StoredFileTable: {}", file.getName());
