@@ -3,12 +3,13 @@ package com.GASB.slack_func.service.file;
 import com.GASB.slack_func.model.dto.file.SlackFileCountDto;
 import com.GASB.slack_func.model.dto.file.SlackFileSizeDto;
 import com.GASB.slack_func.model.dto.file.SlackRecentFileDTO;
+import com.GASB.slack_func.model.entity.Activities;
 import com.GASB.slack_func.model.entity.FileUploadTable;
 import com.GASB.slack_func.model.entity.OrgSaaS;
+import com.GASB.slack_func.repository.activity.FileActivityRepo;
 import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
-import com.GASB.slack_func.repository.org.WorkspaceConfigRepo;
 import com.GASB.slack_func.service.SlackApiService;
 import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -30,7 +32,7 @@ public class SlackFileService {
     private final FileUploadRepository fileUploadRepository;
     private final SlackFileRepository storedFilesRepository;
     private final OrgSaaSRepo orgSaaSRepo;
-    private final WorkspaceConfigRepo workspaceConfigRepo;
+    private final FileActivityRepo fileActivityRepo;
     
 
     @Transactional
@@ -54,28 +56,37 @@ public class SlackFileService {
         }
     }
 
-    public boolean fileDelete(int idx, String fileHash) {
+    public boolean fileDelete(int idx, String file_name, String path) {
         try {
             // 파일 ID와 해시값을 통해 파일 조회
-            FileUploadTable targetFile = fileUploadRepository.findByIdAndFileHash(idx, fileHash).orElse(null);
-            if (targetFile == null) {
-                log.error("File not found or invalid: id={}, hash={}", idx, fileHash);
+            if (!checkFile(idx, file_name, path)) {
                 return false;
             }
-            // 해당 파일이 Slack 파일인지 확인
-            if (orgSaaSRepo.findSaaSIdByid(targetFile.getOrgSaaS().getId()) != 1) {
-                log.error("File is not a Slack file: id={}, saasId={}", idx, targetFile.getOrgSaaS().getId());
-                return false;
-            }
+            FileUploadTable targetFile = fileUploadRepository.findById(idx).orElse(null);
             // Slack API를 통해 파일 삭제 요청
-            return slackApiService.SlackFileDeleteApi(targetFile.getOrgSaaS().getId(), targetFile.getSaasFileId());
+            return slackApiService.SlackFileDeleteApi(Objects.requireNonNull(targetFile).getOrgSaaS().getId(), targetFile.getSaasFileId());
 
         } catch (Exception e) {
-            log.error("Error processing file delete: id={}, hash={}", idx, fileHash, e);
+            log.error("Error processing file delete: id={}, name={}", idx, file_name, e);
             return false;
         }
     }
 
+    private boolean checkFile(int idx, String file_name, String path){
+
+        FileUploadTable targetFile = fileUploadRepository.findById(idx).orElse(null);
+        Activities targetFileActivity = fileActivityRepo.findBySaasFileId(Objects.requireNonNull(targetFile).getSaasFileId()).orElse(null);
+        String tmp_file_name = Objects.requireNonNull(targetFileActivity).getFileName();
+        if (!tmp_file_name.equals(file_name)) {
+            log.error("File name not matched: id={}, name={}", idx, file_name);
+            return false;
+        }
+        if (orgSaaSRepo.findSaaSIdById(targetFile.getOrgSaaS().getId()) != 3) {
+            log.error("File is not a Slack file: id={}, saasId={}", idx, targetFile.getOrgSaaS().getId());
+            return false;
+        }
+        return true;
+    }
     private boolean shouldSkipFile(File file) {
         return "quip".equalsIgnoreCase(file.getMode()) ||
                 "캔버스".equalsIgnoreCase(file.getPrettyType()) ||
