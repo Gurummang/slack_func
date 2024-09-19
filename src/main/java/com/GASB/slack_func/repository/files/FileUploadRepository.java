@@ -27,6 +27,8 @@ public interface FileUploadRepository extends JpaRepository<FileUploadTable, Lon
     List<SlackRecentFileDTO> findRecentFilesByOrgIdAndSaasId(@Param("orgId") int orgId, @Param("saasId") int saasId);
 
 
+    @Query("SELECT fu FROM FileUploadTable fu WHERE fu.id = :idx")
+    Optional<FileUploadTable> findById(@Param("idx")int idx);
 
     @Query("SELECT f FROM FileUploadTable f WHERE f.timestamp = :timestamp AND f.hash = :hash")
     Optional<FileUploadTable> findByTimestampAndHash(@Param("timestamp") LocalDateTime timestamp, @Param("hash") String hash);
