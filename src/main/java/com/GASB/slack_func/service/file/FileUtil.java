@@ -137,6 +137,12 @@ public class FileUtil {
         String tlsh = computeTlsHash(fileData).toString();
         String workspaceName = worekSpaceRepo.findById(workspaceId).get().getWorkspaceName();
         LocalDateTime changeTime = null;
+
+        if (file == null){
+            log.error("File is null");
+            return null;
+        }
+
         if (event_type.contains(":")) {
             String[] event = event_type.split(":");
             try {
@@ -165,6 +171,10 @@ public class FileUtil {
         String orgName = orgSaaSObject.getOrg().getOrgName();
 
         String filePath = saveFileToLocal(fileData, saasName, workspaceName, channelName, hash, file.getTitle());
+        if (filePath == null) {
+            log.info("File path is null");
+            return null;
+        }
 
         // 저장 경로 설정
         String uploadedChannelPath = String.format("%s/%s/%s/%s/%s", orgName, saasName, workspaceName, channelName, uploadedUserName);
@@ -188,6 +198,11 @@ public class FileUtil {
 
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
+            String file_name = file.getName();
+            if (file_name == null){
+                log.error("File name is null");
+                return null;
+            }
             try {
                 if (activity.getEventTs() == null|| activity.getEventType() == null || activity.getSaasFileId()== null){
                     log.error("Invalid activity object: null");
@@ -197,7 +212,7 @@ public class FileUtil {
                     activitiesRepository.save(activity);
                     messageSender.sendGroupingMessage(activity.getId());
                 } else {
-                    log.warn("Duplicate activity detected and ignored in Activities Table: {}", file.getName());
+                    log.warn("Duplicate activity detected and ignored in Activities Table: {}", file_name);
                 }
             } catch (DataIntegrityViolationException e) {
                 log.error("Error saving activity: {}", e.getMessage(), e);
@@ -212,7 +227,7 @@ public class FileUtil {
                     fileUploadRepository.save(fileUploadTableObject);
                     messageSender.sendMessage(fileUploadTableObject.getId());
                 } else {
-                    log.warn("Duplicate file upload detected and ignored in fileUploadTable: {}", file.getName());
+                    log.warn("Duplicate file upload detected and ignored in fileUploadTable: {}", file_name);
                 }
             } catch (DataIntegrityViolationException e) {
                 log.error("Error saving file upload: {}", e.getMessage(), e);
@@ -222,17 +237,23 @@ public class FileUtil {
                 if (isFileNotStored(storedFile)) {
                     try {
                         storedFilesRepository.save(storedFile);
-                        log.info("File uploaded successfully: {}", file.getName());
+                        log.info("File uploaded successfully: {}", file_name);
                     } catch (DataIntegrityViolationException e) {
-                        log.warn("Duplicate entry detected and ignored in StoredFileTable: {}", file.getName());
+                        log.warn("Duplicate entry detected and ignored in StoredFileTable: {}", file_name);
                     }
                 } else {
-                    log.warn("Duplicate file detected: {}", file.getName());
+                    log.warn("Duplicate file detected: {}", file_name);
                 }
             } catch (DataIntegrityViolationException e) {
                 log.error("Error saving file: {}", e.getMessage(), e);
             }
         }
+        if (file.getMimetype() == null || file.getFiletype() == null) {
+            log.error("file data is null.");
+            return null; // 또는 적절한 예외를 던질 수 있습니다.
+        }
+        scanUtil.scanFile(filePath, fileUploadTableObject, file.getMimetype(), file.getFiletype());
+
         scanUtil.scanFile(filePath, fileUploadTableObject, file.getMimetype(), file.getFiletype());
         uploadFileToS3(filePath, s3Key);
 
