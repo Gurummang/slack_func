@@ -351,10 +351,11 @@ public class FileUtil {
                 .getToken();
     }
 
-    private Tlsh computeTlsHash(byte[] fileData) throws IOException {
-        if (fileData == null) {
-            throw new IllegalArgumentException("fileData cannot be null");
+    private Tlsh computeTlsHash(byte[] fileData) {
+        if (fileData == null || fileData.length == 0) {
+            throw new IllegalArgumentException("fileData cannot be null or empty");
         }
+
         final int BUFFER_SIZE = 4096;
         TlshCreator tlshCreator = new TlshCreator();
 
@@ -362,13 +363,25 @@ public class FileUtil {
             byte[] buf = new byte[BUFFER_SIZE];
             int bytesRead;
             while ((bytesRead = is.read(buf)) != -1) {
+                // buf 자체의 null 체크는 불필요, 내부적으로 초기화된 배열
                 tlshCreator.update(buf, 0, bytesRead);
             }
         } catch (IOException e) {
-            throw new IOException("Error computing TLSH hash", e);
+            log.error("Error reading file data for TLSH hash calculation", e);
+            return null; // TLSH 계산 실패 시 null 반환
         }
 
-        return tlshCreator.getHash();
+        try {
+            Tlsh hash = tlshCreator.getHash();
+            if (hash == null) {
+                log.warn("TLSH hash is null, calculation may have failed");
+                return null;
+            }
+            return hash;
+        } catch (IllegalStateException e) {
+            log.warn("TLSH not valid; either not enough data or data has too little variance");
+            return null; // TLSH 계산 실패 시 null 반환
+        }
     }
 
 
