@@ -171,12 +171,28 @@ public class FileUtil {
         String s3Key = String.format("%s/%s/%s/%s/%s/%s", orgName, saasName, workspaceName, channelName, hash, file.getTitle());
 
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
+        if (storedFile == null){
+            log.error("Invalid stored file object: null");
+            return null;
+        }
         FileUploadTable fileUploadTableObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash, changeTime);
+        if (fileUploadTableObject == null) {
+            log.error("Invalid file upload object: null");
+            return null;
+        }
         Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath, tlsh, changeTime);
+        if (activity == null){
+            log.error("Invalid activity object: null");
+            return null;
+        }
 
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
             try {
+                if (activity.getEventTs() == null|| activity.getEventType() == null || activity.getSaasFileId()== null){
+                    log.error("Invalid activity object: null");
+                    return null;
+                }
                 if (!activitiesRepository.existsBySaasFileIdAndEventTs(activity.getSaasFileId(), activity.getEventTs(), activity.getEventType())){
                     activitiesRepository.save(activity);
                     messageSender.sendGroupingMessage(activity.getId());
@@ -188,6 +204,10 @@ public class FileUtil {
             }
 
             try {
+                if (fileUploadTableObject.getId() == null){
+                    log.error("Invalid file upload object: null");
+                    return null;
+                }
                 if (fileUploadDuplicate(fileUploadTableObject)) {
                     fileUploadRepository.save(fileUploadTableObject);
                     messageSender.sendMessage(fileUploadTableObject.getId());
