@@ -137,6 +137,12 @@ public class FileUtil {
         String tlsh = computeTlsHash(fileData).toString();
         String workspaceName = worekSpaceRepo.findById(workspaceId).get().getWorkspaceName();
         LocalDateTime changeTime = null;
+
+        if (file == null){
+            log.error("File is null");
+            return null;
+        }
+
         if (event_type.contains(":")) {
             String[] event = event_type.split(":");
             try {
@@ -165,34 +171,63 @@ public class FileUtil {
         String orgName = orgSaaSObject.getOrg().getOrgName();
 
         String filePath = saveFileToLocal(fileData, saasName, workspaceName, channelName, hash, file.getTitle());
+        if (filePath == null) {
+            log.info("File path is null");
+            return null;
+        }
 
         // 저장 경로 설정
         String uploadedChannelPath = String.format("%s/%s/%s/%s/%s", orgName, saasName, workspaceName, channelName, uploadedUserName);
         String s3Key = String.format("%s/%s/%s/%s/%s/%s", orgName, saasName, workspaceName, channelName, hash, file.getTitle());
 
         StoredFile storedFile = slackFileMapper.toStoredFileEntity(file, hash, s3Key);
+        if (storedFile == null){
+            log.error("Invalid stored file object: null");
+            return null;
+        }
         FileUploadTable fileUploadTableObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash, changeTime);
+        if (fileUploadTableObject == null) {
+            log.error("Invalid file upload object: null");
+            return null;
+        }
         Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath, tlsh, changeTime);
+        if (activity == null){
+            log.error("Invalid activity object: null");
+            return null;
+        }
 
         synchronized (this) {
             // 활동 및 파일 업로드 정보 저장 (중복 체크 후 저장)
+            String file_name = file.getName();
+            if (file_name == null){
+                log.error("File name is null");
+                return null;
+            }
             try {
+                if (activity.getEventTs() == null|| activity.getEventType() == null || activity.getSaasFileId()== null){
+                    log.error("Invalid activity object: null");
+                    return null;
+                }
                 if (!activitiesRepository.existsBySaasFileIdAndEventTs(activity.getSaasFileId(), activity.getEventTs(), activity.getEventType())){
                     activitiesRepository.save(activity);
                     messageSender.sendGroupingMessage(activity.getId());
                 } else {
-                    log.warn("Duplicate activity detected and ignored in Activities Table: {}", file.getName());
+                    log.warn("Duplicate activity detected and ignored in Activities Table: {}", file_name);
                 }
             } catch (DataIntegrityViolationException e) {
                 log.error("Error saving activity: {}", e.getMessage(), e);
             }
 
             try {
+                if (fileUploadTableObject.getId() == null){
+                    log.error("Invalid file upload object: null");
+                    return null;
+                }
                 if (fileUploadDuplicate(fileUploadTableObject)) {
                     fileUploadRepository.save(fileUploadTableObject);
                     messageSender.sendMessage(fileUploadTableObject.getId());
                 } else {
-                    log.warn("Duplicate file upload detected and ignored in fileUploadTable: {}", file.getName());
+                    log.warn("Duplicate file upload detected and ignored in fileUploadTable: {}", file_name);
                 }
             } catch (DataIntegrityViolationException e) {
                 log.error("Error saving file upload: {}", e.getMessage(), e);
@@ -202,17 +237,23 @@ public class FileUtil {
                 if (isFileNotStored(storedFile)) {
                     try {
                         storedFilesRepository.save(storedFile);
-                        log.info("File uploaded successfully: {}", file.getName());
+                        log.info("File uploaded successfully: {}", file_name);
                     } catch (DataIntegrityViolationException e) {
-                        log.warn("Duplicate entry detected and ignored in StoredFileTable: {}", file.getName());
+                        log.warn("Duplicate entry detected and ignored in StoredFileTable: {}", file_name);
                     }
                 } else {
-                    log.warn("Duplicate file detected: {}", file.getName());
+                    log.warn("Duplicate file detected: {}", file_name);
                 }
             } catch (DataIntegrityViolationException e) {
                 log.error("Error saving file: {}", e.getMessage(), e);
             }
         }
+        if (file.getMimetype() == null || file.getFiletype() == null) {
+            log.error("file data is null.");
+            return null; // 또는 적절한 예외를 던질 수 있습니다.
+        }
+        scanUtil.scanFile(filePath, fileUploadTableObject, file.getMimetype(), file.getFiletype());
+
         scanUtil.scanFile(filePath, fileUploadTableObject, file.getMimetype(), file.getFiletype());
         uploadFileToS3(filePath, s3Key);
 
@@ -351,10 +392,11 @@ public class FileUtil {
                 .getToken();
     }
 
-    private Tlsh computeTlsHash(byte[] fileData) throws IOException {
-        if (fileData == null) {
-            throw new IllegalArgumentException("fileData cannot be null");
+    private Tlsh computeTlsHash(byte[] fileData) {
+        if (fileData == null || fileData.length == 0) {
+            throw new IllegalArgumentException("fileData cannot be null or empty");
         }
+
         final int BUFFER_SIZE = 4096;
         TlshCreator tlshCreator = new TlshCreator();
 
@@ -362,13 +404,25 @@ public class FileUtil {
             byte[] buf = new byte[BUFFER_SIZE];
             int bytesRead;
             while ((bytesRead = is.read(buf)) != -1) {
+                // buf 자체의 null 체크는 불필요, 내부적으로 초기화된 배열
                 tlshCreator.update(buf, 0, bytesRead);
             }
         } catch (IOException e) {
-            throw new IOException("Error computing TLSH hash", e);
+            log.error("Error reading file data for TLSH hash calculation", e);
+            return null; // TLSH 계산 실패 시 null 반환
         }
 
-        return tlshCreator.getHash();
+        try {
+            Tlsh hash = tlshCreator.getHash();
+            if (hash == null) {
+                log.warn("TLSH hash is null, calculation may have failed");
+                return null;
+            }
+            return hash;
+        } catch (IllegalStateException e) {
+            log.warn("TLSH not valid; either not enough data or data has too little variance");
+            return null; // TLSH 계산 실패 시 null 반환
+        }
     }
 
 
