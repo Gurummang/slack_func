@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -49,8 +50,10 @@ public class SlackFileEvent {
             log.info("event : {}", event);
 
             OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceIdUsingQuery(spaceId).orElse(null);
-            File fileInfo = slackApiService.fetchFileInfo(fileId, orgSaaSObject.getId());
-            if (fileInfo.getMode() == "quip" || fileInfo.getPrettyType() == "캔버스" || fileInfo.getPrettyType() == "canvas"){
+            File fileInfo = slackApiService.fetchFileInfo(fileId, Objects.requireNonNull(orgSaaSObject).getId());
+            log.info("File info fetched successfully for file ID: {}", fileInfo.getId());
+            log.info("File Data : {}", fileInfo);
+            if (Objects.equals(fileInfo.getMode(), "quip") || Objects.equals(fileInfo.getPrettyType(), "캔버스") || Objects.equals(fileInfo.getPrettyType(), "canvas")){
                 log.info("File is a quip or canvas file, skipping processing");
                 return;
             }
