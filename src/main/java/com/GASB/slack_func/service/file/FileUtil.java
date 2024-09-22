@@ -254,8 +254,6 @@ public class FileUtil {
             return null; // 또는 적절한 예외를 던질 수 있습니다.
         }
         scanUtil.scanFile(filePath, fileUploadTableObject, file.getMimetype(), file.getFiletype());
-
-        scanUtil.scanFile(filePath, fileUploadTableObject, file.getMimetype(), file.getFiletype());
         uploadFileToS3(filePath, s3Key);
 
         return null;
