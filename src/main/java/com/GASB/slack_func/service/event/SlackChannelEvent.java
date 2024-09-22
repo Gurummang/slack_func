@@ -5,11 +5,13 @@ import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.service.SlackApiService;
 import com.GASB.slack_func.service.SlackChannelService;
 import com.GASB.slack_func.service.file.FileUtil;
+import com.slack.api.methods.SlackApiException;
 import com.slack.api.model.Conversation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.Map;
 
 @Service
@@ -35,6 +37,10 @@ public class SlackChannelEvent {
             log.info("Channel event processed successfully");
         } catch (RuntimeException e) {
             log.error("Unexpected error processing channel event", e);
+        } catch (SlackApiException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }
