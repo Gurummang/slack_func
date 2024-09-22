@@ -23,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +31,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @Slf4j
@@ -151,7 +153,7 @@ public class SlackBoardController {
             List<TopUserDTO> topuser = future.get();
 
             return ResponseEntity.ok(topuser);
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | InterruptedException | ExecutionException e) {
             // log.error("Error fetching recent files", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonList(new TopUserDTO("Error", 0L, 0L, LocalDateTime.now())));
@@ -233,9 +235,11 @@ public class SlackBoardController {
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid file path format");
             }
-        } catch (RuntimeException e) {
+        } catch (IllegalArgumentException e) {
             log.error("Error occurred while downloading the file", e);  // 예외 로깅
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }  catch (MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 
