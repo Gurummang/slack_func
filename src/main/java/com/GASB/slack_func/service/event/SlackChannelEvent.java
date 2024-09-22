@@ -33,7 +33,7 @@ public class SlackChannelEvent {
             Conversation new_conversation = slackApiService.fetchConversationInfo(channdlId,orgSaaSObject);
             slackChannelService.addChannel(new_conversation,orgSaaSObject);
             log.info("Channel event processed successfully");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Unexpected error processing channel event", e);
         }
     }

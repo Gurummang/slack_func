@@ -23,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +31,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @Slf4j
@@ -76,7 +78,7 @@ public class SlackBoardController {
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
             SlackFileSizeDto slackFileSizeDto = slackFileService.sumOfSlackFileSize(orgId,1);
             return ResponseEntity.ok(slackFileSizeDto);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             // log.error("Error fetching file size", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new SlackFileSizeDto(0,0,0));
@@ -101,7 +103,7 @@ public class SlackBoardController {
             int orgId = adminRepo.findByEmail(email).get().getOrg().getId();
             SlackFileCountDto slackFileCountDto = slackFileService.SlackFileCountSum(orgId,1);
             return ResponseEntity.ok(slackFileCountDto);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
              log.error("Error fetching file count", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new SlackFileCountDto(0,0,0,0));
@@ -124,7 +126,7 @@ public class SlackBoardController {
             Saas saasObject = saasRepo.findBySaasName("Slack").orElse(null);
             List<SlackRecentFileDTO> recentFiles = fileService.slackRecentFiles(orgId, saasObject.getId().intValue());
             return ResponseEntity.ok(recentFiles);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             // log.error("Error fetching recent files", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonList(new SlackRecentFileDTO("Error", "Server Error", "N/A", LocalDateTime.now())));
@@ -151,7 +153,7 @@ public class SlackBoardController {
             List<TopUserDTO> topuser = future.get();
 
             return ResponseEntity.ok(topuser);
-        } catch (Exception e) {
+        } catch (RuntimeException | InterruptedException | ExecutionException e) {
             // log.error("Error fetching recent files", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonList(new TopUserDTO("Error", 0L, 0L, LocalDateTime.now())));
@@ -233,9 +235,11 @@ public class SlackBoardController {
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid file path format");
             }
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             log.error("Error occurred while downloading the file", e);  // 예외 로깅
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }  catch (MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -279,7 +283,7 @@ public class SlackBoardController {
             }
 
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Error deleting files", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("message", "Internal server error"));

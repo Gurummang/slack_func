@@ -69,7 +69,7 @@ public class SlackUserService {
             if (!slackUserRepo.existsByUserId(monitoredUser.getUserId(), org_saas_id)) {
                 try {
                     slackUserRepo.save(monitoredUser);
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     log.error("Error saving user", e);
                     log.error("User: {}", monitoredUser.toString());
                 }
@@ -91,7 +91,7 @@ public class SlackUserService {
                     ((java.sql.Timestamp) result[3]).toLocalDateTime()
             )).collect(Collectors.toList());
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error retrieving top users", e);
         }
     }

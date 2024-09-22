@@ -51,8 +51,10 @@ public class SlackFileService {
 
                 fileUtil.processAndStoreFile(file, orgSaaSObject, workspaceId, event_type);
             }
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             log.error("Error processing files", e);
+        } catch (Exception e) {
+            log.error("Error processing files(etc)", e);
         }
     }
 
@@ -66,7 +68,7 @@ public class SlackFileService {
             // Slack API를 통해 파일 삭제 요청
             return slackApiService.SlackFileDeleteApi(Objects.requireNonNull(targetFile).getOrgSaaS().getId(), targetFile.getSaasFileId());
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Error processing file delete: id={}, name={}", idx, file_name, e);
             return false;
         }
@@ -96,7 +98,7 @@ public class SlackFileService {
     public List<SlackRecentFileDTO> slackRecentFiles(int orgId, int saasId) {
         try {
             return fileUploadRepository.findRecentFilesByOrgIdAndSaasId(orgId, saasId);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Error retrieving recent files for org_id: {} and saas_id: {}", orgId, saasId, e);
             return Collections.emptyList();
         }
