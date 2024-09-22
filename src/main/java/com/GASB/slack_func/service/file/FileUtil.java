@@ -186,10 +186,10 @@ public class FileUtil {
             return null;
         }
         FileUploadTable fileUploadTableObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash, changeTime);
-        if (fileUploadTableObject == null) {
-            log.error("Invalid file upload object: null");
-            return null;
-        }
+//        if (fileUploadTableObject == null) {
+//            log.error("Invalid file upload object: null");
+//            return null;
+//        }
         Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath, tlsh, changeTime);
         if (activity == null){
             log.error("Invalid activity object: null");
@@ -413,6 +413,10 @@ public class FileUtil {
         }
 
         try {
+            if (tlshCreator == null){
+                log.info("TLSH creator object is null");
+                return null;
+            }
             Tlsh hash = tlshCreator.getHash();
             if (hash == null) {
                 log.warn("TLSH hash is null, calculation may have failed");
