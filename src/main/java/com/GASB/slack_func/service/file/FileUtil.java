@@ -186,10 +186,10 @@ public class FileUtil {
             return null;
         }
         FileUploadTable fileUploadTableObject = slackFileMapper.toFileUploadEntity(file, orgSaaSObject, hash, changeTime);
-//        if (fileUploadTableObject == null) {
-//            log.error("Invalid file upload object: null");
-//            return null;
-//        }
+        if (fileUploadTableObject == null) {
+            log.error("Invalid file upload object: null");
+            return null;
+        }
         Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath, tlsh, changeTime);
         if (activity == null){
             log.error("Invalid activity object: null");
@@ -219,12 +219,13 @@ public class FileUtil {
             }
 
             try {
-                if (fileUploadTableObject.getId() == null){
-                    log.error("Invalid file upload object: null");
-                    return null;
-                }
                 if (fileUploadDuplicate(fileUploadTableObject)) {
                     fileUploadRepository.save(fileUploadTableObject);
+                    if (fileUploadTableObject.getId() == null){
+                        log.error("Invalid file upload object: null");
+                        log.error("Messsage send Failed: {}", file_name);
+                        return null;
+                    }
                     messageSender.sendMessage(fileUploadTableObject.getId());
                 } else {
                     log.warn("Duplicate file upload detected and ignored in fileUploadTable: {}", file_name);
