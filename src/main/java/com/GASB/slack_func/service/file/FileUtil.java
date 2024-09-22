@@ -334,7 +334,7 @@ public class FileUtil {
 
             s3Client.putObject(putObjectRequest, Paths.get(filePath));
             log.info("File uploaded successfully to S3: {}", s3Key);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Error uploading file to S3: {}", e.getMessage(), e);
         }
     }

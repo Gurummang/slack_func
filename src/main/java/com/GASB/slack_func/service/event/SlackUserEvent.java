@@ -28,8 +28,10 @@ public class SlackUserEvent {
             OrgSaaS orgSaaSObject = orgSaaSRepo.findBySpaceIdUsingQuery(spaceId).get();
             slackUserService.addUser(slackApiService.fetchUserInfo(userId,orgSaaSObject));
             log.info("User event processed successfully");
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             log.error("Unexpected error processing user event", e);
+        } catch (Exception e){
+            log.error("Etc Exception : {}", e);
         }
     }
 }

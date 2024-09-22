@@ -45,7 +45,7 @@ public class SlackInitController {
             response.put("message", "Channels saved successfully");
             // log.info("Channels saved successfully");
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             response.put("status", "error");
             response.put("message", "Error fetching conversations");
             // log.error("Error fetching conversations", e);
@@ -62,7 +62,7 @@ public class SlackInitController {
             response.put("status", "success");
             response.put("message", "Users saved successfully");
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             response.put("status", "error");
             response.put("message", "Error fetching users");
             // log.error("Error fetching users", e);
@@ -79,7 +79,7 @@ public class SlackInitController {
             response.put("status", "success");
             response.put("message", "Files saved successfully");
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             response.put("status", "error");
             response.put("message", "Error fetching files");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
@@ -98,7 +98,7 @@ public class SlackInitController {
             response.put("status", "success");
             response.put("message", "All data saved successfully");
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             response.put("status", "error");
             response.put("message", "Error fetching all data");
             // log.error("Error fetching all data", e);

@@ -62,7 +62,7 @@ public class SlackFileEvent {
             log.info("File event processed successfully for file ID: {}", fileInfo.getId());
         } catch (SlackApiException | IOException e) {
             log.error("Error fetching file info or processing file data", e);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Unexpected error processing file event", e);
         }
     }
@@ -85,7 +85,7 @@ public class SlackFileEvent {
            // 2. file_upload 테이블에서 deleted 컬럼을 true로 변경
            fileUploadRepository.checkDelete(file_id);
            messageSender.sendGroupingMessage(activities.getId());
-       } catch (Exception e) {
+       } catch (RuntimeException e) {
            log.error("Error processing file delete event", e);
        }
     }
