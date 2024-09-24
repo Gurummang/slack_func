@@ -134,7 +134,21 @@ public class FileUtil {
         log.info("Processing file: {}", file.getName());
         log.info("file event type : {}", event_type);
         String hash = calculateHash(fileData);
-        String tlsh = computeTlsHash(fileData).toString();
+
+        String tlsh = null;
+        try {
+            Tlsh tlshResult = computeTlsHash(fileData);
+            if (tlshResult != null) {
+                tlsh = tlshResult.toString();
+            } else {
+                tlsh = "TLSH calculation failed"; // TLSH 계산 실패 시 대체 값
+            }
+        } catch (Exception e) {
+            log.error("Error computing TLSH hash", e);
+            tlsh = "TLSH calculation failed";
+        }
+        log.info("TLSH: {}", tlsh);
+
         String workspaceName = worekSpaceRepo.findById(workspaceId).get().getWorkspaceName();
         LocalDateTime changeTime = null;
 
@@ -190,7 +204,7 @@ public class FileUtil {
             log.error("Invalid file upload object: null");
             return null;
         }
-        Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath, tlsh, changeTime);
+        Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath, tlshString, changeTime);
         if (activity == null){
             log.error("Invalid activity object: null");
             return null;
