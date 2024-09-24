@@ -430,13 +430,6 @@ public class FileUtil {
                 log.warn("TLSH is not valid; either not enough data or data has too little variance");
                 return null;
             }
-
-            // checksumArray가 초기화되지 않았는지 확인
-            if (tlshCreator.getChecksumArray() == null || tlshCreator.getChecksumArray().length == 0) {
-                log.warn("TLSH checksumArray is null or empty, cannot proceed with hash calculation");
-                return null;
-            }
-
             // 유효성 검사를 통과한 후 getHash 호출
             Tlsh hash = tlshCreator.getHash(true);
             if (hash == null) {

@@ -448,7 +448,7 @@ public class TlshCreator {
 			throw new IllegalStateException("TLSH not valid; either not enough data or data has too little variance");
 		}
 
-		// checksumArray가 null이 아닌지 확인
+		// checksumArray가 null이 아닌지 확인: 추가한 부분
 		if (this.checksumArray == null || this.checksumArray.length == 0) {
 			throw new IllegalStateException("TLSH checksumArray is null or empty, cannot generate hash");
 
