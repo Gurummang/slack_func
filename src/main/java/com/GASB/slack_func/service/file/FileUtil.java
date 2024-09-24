@@ -134,7 +134,21 @@ public class FileUtil {
         log.info("Processing file: {}", file.getName());
         log.info("file event type : {}", event_type);
         String hash = calculateHash(fileData);
-        String tlsh = computeTlsHash(fileData).toString();
+
+        String tlsh = null;
+        try {
+            Tlsh tlshResult = computeTlsHash(fileData);
+            if (tlshResult != null) {
+                tlsh = tlshResult.toString();
+            } else {
+                tlsh = "TLSH calculation failed"; // TLSH 계산 실패 시 대체 값
+            }
+        } catch (Exception e) {
+            log.error("Error computing TLSH hash", e);
+            tlsh = "TLSH calculation failed";
+        }
+        log.info("TLSH: {}", tlsh);
+
         String workspaceName = worekSpaceRepo.findById(workspaceId).get().getWorkspaceName();
         LocalDateTime changeTime = null;
 
@@ -190,7 +204,7 @@ public class FileUtil {
             log.error("Invalid file upload object: null");
             return null;
         }
-        Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath, tlsh, changeTime);
+        Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath, tlshString, changeTime);
         if (activity == null){
             log.error("Invalid activity object: null");
             return null;
@@ -397,34 +411,39 @@ public class FileUtil {
         }
 
         final int BUFFER_SIZE = 4096;
-        TlshCreator tlshCreator = new TlshCreator();
+        TlshCreator tlshCreator = new TlshCreator();  // TlshCreator 생성
 
         try (InputStream is = new ByteArrayInputStream(fileData)) {
             byte[] buf = new byte[BUFFER_SIZE];
             int bytesRead;
             while ((bytesRead = is.read(buf)) != -1) {
-                // buf 자체의 null 체크는 불필요, 내부적으로 초기화된 배열
-                tlshCreator.update(buf, 0, bytesRead);
+                tlshCreator.update(buf, 0, bytesRead); // 버퍼를 통해 데이터 업데이트
             }
         } catch (IOException e) {
             log.error("Error reading file data for TLSH hash calculation", e);
-            return null; // TLSH 계산 실패 시 null 반환
+            return null; // 오류 시 null 반환
         }
 
         try {
-            if (tlshCreator == null){
-                log.info("TLSH creator object is null");
+            // getHash() 호출 전에 유효성 검사
+            if (!tlshCreator.isValid(true)) {
+                log.warn("TLSH is not valid; either not enough data or data has too little variance");
                 return null;
             }
-            Tlsh hash = tlshCreator.getHash();
+            // 유효성 검사를 통과한 후 getHash 호출
+            Tlsh hash = tlshCreator.getHash(true);
             if (hash == null) {
                 log.warn("TLSH hash is null, calculation may have failed");
                 return null;
             }
-            return hash;
+
+            return hash;  // 정상적인 해시 값 반환
         } catch (IllegalStateException e) {
-            log.warn("TLSH not valid; either not enough data or data has too little variance");
-            return null; // TLSH 계산 실패 시 null 반환
+            log.warn("TLSH calculation failed: " + e.getMessage(), e);
+            return null;
+        } catch (Exception e) {
+            log.error("Unexpected error during TLSH hash calculation", e);
+            return null;
         }
     }
 
