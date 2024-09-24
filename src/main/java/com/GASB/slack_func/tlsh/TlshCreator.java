@@ -448,6 +448,12 @@ public class TlshCreator {
 			throw new IllegalStateException("TLSH not valid; either not enough data or data has too little variance");
 		}
 
+		// checksumArray가 null이 아닌지 확인
+		if (this.checksumArray == null || this.checksumArray.length == 0) {
+			throw new IllegalStateException("TLSH checksumArray is null or empty, cannot generate hash");
+
+		}
+
 		long q1, q2, q3;
 		long[] quartiles = find_quartile();
 		q1 = quartiles[0];
