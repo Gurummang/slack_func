@@ -412,13 +412,14 @@ public class FileUtil {
         }
 
         try {
-            if (tlshCreator == null){
+            if (tlshCreator != null) {
+                Tlsh hash = tlshCreator.getHash();
+                if (hash == null) {
+                    log.warn("TLSH hash is null, calculation may have failed");
+                    return null;
+                }
+            } else {
                 log.info("TLSH creator object is null");
-                return null;
-            }
-            Tlsh hash = tlshCreator.getHash();
-            if (hash == null) {
-                log.warn("TLSH hash is null, calculation may have failed");
                 return null;
             }
             return hash;
