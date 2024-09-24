@@ -411,19 +411,18 @@ public class FileUtil {
         }
 
         try {
-            Tlsh hash = tlshCreator.getHash(); // tlshCreator는 null이 아님, 바로 getHash 호출 가능
+            // null 체크 추가
+            Tlsh hash = tlshCreator != null ? tlshCreator.getHash() : null;
             if (hash == null) {
                 log.warn("TLSH hash is null, calculation may have failed");
                 return null;
             }
             return hash;
         } catch (IllegalStateException e) {
-            log.warn("TLSH not valid; either not enough data or data has too little variance");
+            log.warn("TLSH not valid; either not enough data or data has too little variance", e);
             return null; // TLSH 계산 실패 시 null 반환
         }
     }
-
-
 
     public void deleteFileInS3(String filePath) {
         try {
