@@ -397,7 +397,7 @@ public class FileUtil {
         }
 
         final int BUFFER_SIZE = 4096;
-        TlshCreator tlshCreator = new TlshCreator();  // 여기서 tlshCreator는 null일 수 없습니다.
+        TlshCreator tlshCreator = new TlshCreator();  // 여기서 tlshCreator는 null이 될 수 없습니다.
 
         try (InputStream is = new ByteArrayInputStream(fileData)) {
             byte[] buf = new byte[BUFFER_SIZE];
@@ -410,19 +410,21 @@ public class FileUtil {
             return null; // TLSH 계산 실패 시 null 반환
         }
 
+        Tlsh hash = null;  // hash 변수를 미리 선언하여 null로 초기화
         try {
-            // null 체크 추가
-            Tlsh hash = tlshCreator != null ? tlshCreator.getHash() : null;
+            hash = tlshCreator.getHash();  // tlshCreator는 null이 아님, getHash만 null일 가능성 있음
             if (hash == null) {
                 log.warn("TLSH hash is null, calculation may have failed");
                 return null;
             }
-            return hash;
         } catch (IllegalStateException e) {
             log.warn("TLSH not valid; either not enough data or data has too little variance", e);
             return null; // TLSH 계산 실패 시 null 반환
         }
+
+        return hash; // null이 아니면 해시 반환
     }
+
 
     public void deleteFileInS3(String filePath) {
         try {
