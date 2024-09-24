@@ -397,32 +397,34 @@ public class FileUtil {
         }
 
         final int BUFFER_SIZE = 4096;
-        TlshCreator tlshCreator = new TlshCreator();
+        TlshCreator tlshCreator = new TlshCreator();  // null이 아님, 바로 생성
 
         try (InputStream is = new ByteArrayInputStream(fileData)) {
             byte[] buf = new byte[BUFFER_SIZE];
             int bytesRead;
             while ((bytesRead = is.read(buf)) != -1) {
-                tlshCreator.update(buf, 0, bytesRead);
+                tlshCreator.update(buf, 0, bytesRead); // 내부적으로 데이터를 채우는 과정
             }
         } catch (IOException e) {
             log.error("Error reading file data for TLSH hash calculation", e);
-            return null;
+            return null; // TLSH 계산 실패 시 null 반환
         }
 
         try {
-            // 추가: isValid를 먼저 체크하여 데이터가 충분한지 확인
+            // getHash() 호출 전에 isValid(true)로 상태 확인
             if (!tlshCreator.isValid(true)) {
                 log.warn("TLSH is not valid; either not enough data or data has too little variance");
                 return null;
             }
 
-            Tlsh hash = tlshCreator.getHash();  // 이 시점에서 유효한 해시 생성
+            // 유효성 검사 후 getHash 호출
+            Tlsh hash = tlshCreator.getHash(true);  // force true로 유효한 해시 생성
             if (hash == null) {
                 log.warn("TLSH hash is null, calculation may have failed");
                 return null;
             }
-            return hash;
+
+            return hash;  // 정상적으로 계산된 해시 반환
         } catch (IllegalStateException e) {
             log.warn("TLSH calculation failed: " + e.getMessage(), e);
             return null;
@@ -431,6 +433,7 @@ public class FileUtil {
             return null;
         }
     }
+
 
     public void deleteFileInS3(String filePath) {
         try {
