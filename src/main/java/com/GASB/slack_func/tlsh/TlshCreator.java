@@ -448,10 +448,11 @@ public class TlshCreator {
 			throw new IllegalStateException("TLSH not valid; either not enough data or data has too little variance");
 		}
 
-		// checksumArray가 null이 아닌지 확인: 추가한 부분
-		if (this.checksumArray == null || this.checksumArray.length == 0) {
+		// checksumArray가 null일 때 예외를 던지지 않고 처리
+		if (this.checksumArray == null && checksumLength == 1) {
+			log.debug("ChecksumArray is null but checksumLength is 1, continuing with hash generation.");
+		} else if (this.checksumArray == null || this.checksumArray.length == 0) {
 			throw new IllegalStateException("TLSH checksumArray is null or empty, cannot generate hash");
-
 		}
 
 		long q1, q2, q3;
@@ -459,9 +460,7 @@ public class TlshCreator {
 		q1 = quartiles[0];
 		q2 = quartiles[1];
 		q3 = quartiles[2];
-		
-		// issue #79 - divide by 0 if q3 == 0
-		// This should already by caught by isValid but an extra check here just in case
+
 		if (q3 == 0) {
 			throw new IllegalStateException("TLSH not valid; too little variance in the data");
 		}
@@ -486,12 +485,14 @@ public class TlshCreator {
 		int q1ratio = (int) ((float) (q1 * 100.0f) / (float) q3) & 0xF;
 		int q2ratio = (int) ((float) (q2 * 100.0f) / (float) q3) & 0xF;
 
+		// checksumArray가 null일 때도 동작하도록 로직 변경
 		if (checksumLength == 1) {
 			return new Tlsh(version, new int[] {checksum}, lvalue, q1ratio, q2ratio, tmp_code);
 		} else {
 			return new Tlsh(version, checksumArray.clone(), lvalue, q1ratio, q2ratio, tmp_code);
 		}
 	}
+
 
 	/**
 	 * Reset the hasher so that it can be used to create a new hash
