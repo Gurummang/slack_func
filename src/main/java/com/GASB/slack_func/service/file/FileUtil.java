@@ -204,7 +204,7 @@ public class FileUtil {
             log.error("Invalid file upload object: null");
             return null;
         }
-        Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath, tlshString, changeTime);
+        Activities activity = slackFileMapper.toActivityEntity(file, event_type, user,uploadedChannelPath, tlsh, changeTime);
         if (activity == null){
             log.error("Invalid activity object: null");
             return null;
