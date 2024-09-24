@@ -397,14 +397,13 @@ public class FileUtil {
         }
 
         final int BUFFER_SIZE = 4096;
-        TlshCreator tlshCreator = new TlshCreator();
+        TlshCreator tlshCreator = new TlshCreator();  // 여기서 tlshCreator는 null일 수 없습니다.
 
         try (InputStream is = new ByteArrayInputStream(fileData)) {
             byte[] buf = new byte[BUFFER_SIZE];
             int bytesRead;
             while ((bytesRead = is.read(buf)) != -1) {
-                // buf 자체의 null 체크는 불필요, 내부적으로 초기화된 배열
-                tlshCreator.update(buf, 0, bytesRead);
+                tlshCreator.update(buf, 0, bytesRead); // buf는 초기화된 배열이므로 null 체크 불필요
             }
         } catch (IOException e) {
             log.error("Error reading file data for TLSH hash calculation", e);
@@ -412,14 +411,9 @@ public class FileUtil {
         }
 
         try {
-            if (tlshCreator != null) {
-                Tlsh hash = tlshCreator.getHash();
-                if (hash == null) {
-                    log.warn("TLSH hash is null, calculation may have failed");
-                    return null;
-                }
-            } else {
-                log.info("TLSH creator object is null");
+            Tlsh hash = tlshCreator.getHash(); // tlshCreator는 null이 아님, 바로 getHash 호출 가능
+            if (hash == null) {
+                log.warn("TLSH hash is null, calculation may have failed");
                 return null;
             }
             return hash;
@@ -428,6 +422,7 @@ public class FileUtil {
             return null; // TLSH 계산 실패 시 null 반환
         }
     }
+
 
 
     public void deleteFileInS3(String filePath) {
