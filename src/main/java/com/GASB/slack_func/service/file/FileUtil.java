@@ -417,7 +417,12 @@ public class FileUtil {
                 return null;
             }
 
-            // 유효성 검사 후 getHash 호출
+            // checksumArray가 null인지 확인
+            if (tlshCreator.getChecksumArray() == null) {
+                log.warn("TLSH checksumArray is null, cannot proceed with hash calculation");
+                return null;
+            }
+
             Tlsh hash = tlshCreator.getHash(true);  // force true로 유효한 해시 생성
             if (hash == null) {
                 log.warn("TLSH hash is null, calculation may have failed");
@@ -433,6 +438,7 @@ public class FileUtil {
             return null;
         }
     }
+
 
 
     public void deleteFileInS3(String filePath) {
