@@ -193,7 +193,9 @@ public class TlshCreator {
 	public void update(byte[] data, int offset, int len) {
 		final int RNG_SIZE = SLIDING_WND_SIZE;
 		// #define RNG_IDX(i) ((i+RNG_SIZE)%RNG_SIZE)
-
+		if (data_len < 0 || len < 0 || offset < 0) {
+			throw new IllegalArgumentException("Negative values detected for data_len, len, or offset");
+		}
 		// Indexes into the sliding window. They cycle like
 		// 0 4 3 2 1
 		// 1 0 4 3 2
@@ -211,6 +213,11 @@ public class TlshCreator {
 		long fed_len = data_len;
 
 		for (int i = offset; i < offset + len; i++, fed_len++) {
+			// fed_len이 음수인지 확인하고, 오버플로우 여부를 추가로 검사
+			if (fed_len >= Integer.MAX_VALUE || fed_len < 0) {
+				throw new IllegalStateException("Data length overflow or negative length detected");
+			}
+
 			slide_window[j] = data[i] & 0xFF;
 
 			if (fed_len >= 4) {
