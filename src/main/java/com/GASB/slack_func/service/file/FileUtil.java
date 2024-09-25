@@ -425,12 +425,6 @@ public class FileUtil {
         }
 
         try {
-            // getHash() 호출 전에 유효성 검사
-            if (!tlshCreator.isValid(true)) {
-                log.warn("TLSH is not valid; either not enough data or data has too little variance");
-                return null;
-            }
-            // 유효성 검사를 통과한 후 getHash 호출
             Tlsh hash = tlshCreator.getHash(true);
             if (hash == null) {
                 log.warn("TLSH hash is null, calculation may have failed");
@@ -446,7 +440,6 @@ public class FileUtil {
             return null;
         }
     }
-
 
     public void deleteFileInS3(String filePath) {
         try {
