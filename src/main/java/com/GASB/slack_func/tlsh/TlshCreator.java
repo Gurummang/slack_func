@@ -211,6 +211,10 @@ public class TlshCreator {
 		long fed_len = data_len;
 
 		for (int i = offset; i < offset + len; i++, fed_len++) {
+			if (fed_len >= Integer.MAX_VALUE) {
+				throw new IllegalStateException("Data length overflow detected");
+			}
+
 			slide_window[j] = data[i] & 0xFF;
 
 			if (fed_len >= 4) {
