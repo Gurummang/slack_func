@@ -12,16 +12,16 @@ import com.GASB.slack_func.repository.org.AdminRepo;
 import com.GASB.slack_func.repository.org.SaasRepo;
 import com.GASB.slack_func.service.SlackUserService;
 import com.GASB.slack_func.service.file.SlackFileService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
@@ -45,12 +45,21 @@ public class SlackBoardController {
     private final FileUploadRepository fileUploadRepository;
 
     private final SlackFileRepository slackFileRepository;
+    private final RestTemplate restTemplate;
+
+    @Value("${o365.delete.url}")
+    private String o365_url;
+
+    @Value("${google.delete.url}")
+    private String google_url;
+
+
 
     @Autowired
     public SlackBoardController(SlackFileService slackFileService, SaasRepo saasRepo
             , AdminRepo adminRepo, SlackFileService fileService
             , SlackUserService slackUserService, FileUploadRepository fileUploadRepository,
-                                SlackFileRepository slackFileRepository) {
+                                SlackFileRepository slackFileRepository, RestTemplate restTemplate) {
         this.slackFileService = slackFileService;
         this.saasRepo = saasRepo;
         this.adminRepo = adminRepo;
@@ -58,6 +67,7 @@ public class SlackBoardController {
         this.slackUserService = slackUserService;
         this.fileUploadRepository = fileUploadRepository;
         this.slackFileRepository = slackFileRepository;
+        this.restTemplate = restTemplate;
     }
     
 
@@ -258,19 +268,82 @@ public class SlackBoardController {
             }
 
             Map<String, String> response = new HashMap<>();
+            List<Map<String, String>> slack_request = new ArrayList<>();
+            List<Map<String, String>> o365_request = new ArrayList<>();
+            List<Map<String, String>> google_drive_request = new ArrayList<>();
+
             boolean allSuccess = true;
 
+            for (Map<String,String> each : requests){
+                switch (each.get("saas")){
+                    case "slack" -> slack_request.add(each);
+                    case "o365" -> o365_request.add(each);
+                    case "google-drive" -> google_drive_request.add(each);
+                }
+            }
+
+
+            if (slack_request.size() == 0 ){
+                response.put("status", "400");
+                response.put("message", "No slack files to delete");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             // 요청 받은 파일 목록 처리
-            for (Map<String, String> request : requests) {
+            for (Map<String, String> request : slack_request) {
                 int fileUploadTableIdx = Integer.parseInt(request.get("id"));
                 String file_name = request.get("file_name");
                 String path = request.get("path");
-
                 // 파일 삭제 시도
                 if (!slackFileService.fileDelete(fileUploadTableIdx, file_name, path)) {
                     allSuccess = false;
                     log.error("Failed to delete file with id: {}", fileUploadTableIdx);
                 }
+            }
+
+
+            if (!o365_request.isEmpty() || !google_drive_request.isEmpty()) {
+                // o365 파일 삭제 요청
+                if (!o365_request.isEmpty()) {
+                    HttpHeaders headers = createHeadersWithCookies(servletRequest);
+
+                    // 전달할 데이터 생성 (o365_request 자체를 payload로 사용)
+                    Map<String, Object> o365DeletePayload = new HashMap<>();
+                    o365DeletePayload.put("files", o365_request);  // 여러 파일 요청 리스트를 한번에 전달
+
+                    // 다른 서버로 요청 보내기 (O365 서버 URL)
+                    HttpEntity<Map<String, Object>> entity = new HttpEntity<>(o365DeletePayload, headers);
+                    ResponseEntity<String> o365Response = restTemplate.exchange(
+                            o365_url, HttpMethod.POST, entity, String.class);
+
+                    // 응답 처리
+                    if (!o365Response.getStatusCode().is2xxSuccessful()) {
+                        allSuccess = false;
+                        log.error("Failed to delete O365 files. Response: {}", o365Response.getBody());
+                    }
+                }
+
+
+                // 구글 드라이브 파일 삭제 요청
+                if (!google_drive_request.isEmpty()) {
+                    HttpHeaders headers = createHeadersWithCookies(servletRequest);
+
+                    // 전달할 데이터 생성 (google_drive_request 자체를 payload로 사용)
+                    Map<String, Object> googleDriveDeletePayload = new HashMap<>();
+                    googleDriveDeletePayload.put("files", google_drive_request);  // 여러 파일 요청 리스트를 한번에 전달
+
+                    // 다른 서버로 요청 보내기 (Google Drive 서버 URL)
+                    HttpEntity<Map<String, Object>> entity = new HttpEntity<>(googleDriveDeletePayload, headers);
+                    ResponseEntity<String> googleDriveResponse = restTemplate.exchange(
+                            google_url, HttpMethod.POST, entity, String.class);
+
+                    // 응답 처리
+                    if (!googleDriveResponse.getStatusCode().is2xxSuccessful()) {
+                        allSuccess = false;
+                        log.error("Failed to delete Google Drive files. Response: {}", googleDriveResponse.getBody());
+                    }
+                }
+
             }
 
             // 전체 성공 여부에 따른 응답
@@ -289,4 +362,16 @@ public class SlackBoardController {
                     .body(Collections.singletonMap("message", "Internal server error"));
         }
     }
+
+    private HttpHeaders createHeadersWithCookies(HttpServletRequest servletRequest) {
+        HttpHeaders headers = new HttpHeaders();
+        Cookie[] cookies = servletRequest.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                headers.add(HttpHeaders.COOKIE, cookie.getName() + "=" + cookie.getValue());
+            }
+        }
+        return headers;
+    }
+
 }
