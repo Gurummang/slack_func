@@ -83,7 +83,7 @@ public class SlackFileService {
             log.error("File name not matched: id={}, name={}", idx, file_name);
             return false;
         }
-        if (orgSaaSRepo.findSaaSIdById(targetFile.getOrgSaaS().getId()) != 3) {
+        if (orgSaaSRepo.findSaaSIdById(targetFile.getOrgSaaS().getId()) != 1) {
             log.error("File is not a Slack file: id={}, saasId={}", idx, targetFile.getOrgSaaS().getId());
             return false;
         }
