@@ -60,10 +60,10 @@ public class SlackFileService {
         }
     }
 
-    public boolean fileDelete(int idx, String file_name, String path) {
+    public boolean fileDelete(int idx, String file_name) {
         try {
             // 파일 ID와 해시값을 통해 파일 조회
-            if (!checkFile(idx, file_name, path)) {
+            if (!checkFile(idx, file_name)) {
                 return false;
             }
             FileUploadTable targetFile = fileUploadRepository.findById(idx).orElse(null);
@@ -78,7 +78,7 @@ public class SlackFileService {
 
 
 
-    private boolean checkFile(int idx, String file_name, String path) throws SlackApiException, IOException {
+    private boolean checkFile(int idx, String file_name) throws SlackApiException, IOException {
 
         try {
             FileUploadTable targetFile = fileUploadRepository.findById(idx).orElse(null);
