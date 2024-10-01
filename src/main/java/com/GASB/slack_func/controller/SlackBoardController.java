@@ -10,11 +10,13 @@ import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.AdminRepo;
 import com.GASB.slack_func.repository.org.SaasRepo;
+import com.GASB.slack_func.service.MessageSender;
 import com.GASB.slack_func.service.SlackUserService;
 import com.GASB.slack_func.service.file.SlackFileService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -45,12 +47,21 @@ public class SlackBoardController {
     private final FileUploadRepository fileUploadRepository;
 
     private final SlackFileRepository slackFileRepository;
+    private final MessageSender messageSender;
+
+    @Value("${o365.delete.url}")
+    private String o365_url;
+
+    @Value("${google.delete.url}")
+    private String google_url;
+
+
 
     @Autowired
     public SlackBoardController(SlackFileService slackFileService, SaasRepo saasRepo
             , AdminRepo adminRepo, SlackFileService fileService
             , SlackUserService slackUserService, FileUploadRepository fileUploadRepository,
-                                SlackFileRepository slackFileRepository) {
+                                SlackFileRepository slackFileRepository, MessageSender messageSender) {
         this.slackFileService = slackFileService;
         this.saasRepo = saasRepo;
         this.adminRepo = adminRepo;
@@ -58,6 +69,7 @@ public class SlackBoardController {
         this.slackUserService = slackUserService;
         this.fileUploadRepository = fileUploadRepository;
         this.slackFileRepository = slackFileRepository;
+        this.messageSender = messageSender;
     }
     
 
@@ -258,18 +270,50 @@ public class SlackBoardController {
             }
 
             Map<String, String> response = new HashMap<>();
+            List<Map<String, String>> slack_request = new ArrayList<>();
+            List<Map<String, String>> o365_request = new ArrayList<>();
+            List<Map<String, String>> google_drive_request = new ArrayList<>();
+
             boolean allSuccess = true;
 
+            for (Map<String,String> each : requests){
+                switch (each.get("saas")){
+                    case "slack" -> slack_request.add(each);
+                    case "o365" -> o365_request.add(each);
+                    case "google-drive" -> google_drive_request.add(each);
+                }
+            }
+
+
+            if (slack_request.size() == 0 ){
+                response.put("status", "400");
+                response.put("message", "No slack files to delete");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             // 요청 받은 파일 목록 처리
-            for (Map<String, String> request : requests) {
+            for (Map<String, String> request : slack_request) {
                 int fileUploadTableIdx = Integer.parseInt(request.get("id"));
                 String file_name = request.get("file_name");
                 String path = request.get("path");
-
                 // 파일 삭제 시도
                 if (!slackFileService.fileDelete(fileUploadTableIdx, file_name, path)) {
                     allSuccess = false;
                     log.error("Failed to delete file with id: {}", fileUploadTableIdx);
+                }
+            }
+
+
+            if (!o365_request.isEmpty() || !google_drive_request.isEmpty()) {
+                log.info("o365_request : {}", o365_request);
+                log.info("google_drive_request : {}", google_drive_request);
+                // o365 파일 삭제 요청
+                if (!o365_request.isEmpty()) {
+                    messageSender.sendO365DeleteMessage(o365_request);
+                }
+                // 구글 드라이브 파일 삭제 요청
+                if (!google_drive_request.isEmpty()) {
+                    messageSender.sendGoogleDriveDeleteMessage(google_drive_request);
                 }
             }
 
@@ -289,4 +333,5 @@ public class SlackBoardController {
                     .body(Collections.singletonMap("message", "Internal server error"));
         }
     }
+
 }

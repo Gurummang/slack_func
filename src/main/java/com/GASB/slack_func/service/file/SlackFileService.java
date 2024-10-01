@@ -11,12 +11,14 @@ import com.GASB.slack_func.repository.files.FileUploadRepository;
 import com.GASB.slack_func.repository.files.SlackFileRepository;
 import com.GASB.slack_func.repository.org.OrgSaaSRepo;
 import com.GASB.slack_func.service.SlackApiService;
+import com.slack.api.methods.SlackApiException;
 import com.slack.api.model.File;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -68,27 +70,40 @@ public class SlackFileService {
             // Slack API를 통해 파일 삭제 요청
             return slackApiService.SlackFileDeleteApi(Objects.requireNonNull(targetFile).getOrgSaaS().getId(), targetFile.getSaasFileId());
 
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | SlackApiException | IOException e) {
             log.error("Error processing file delete: id={}, name={}", idx, file_name, e);
             return false;
         }
     }
 
-    private boolean checkFile(int idx, String file_name, String path){
 
-        FileUploadTable targetFile = fileUploadRepository.findById(idx).orElse(null);
-        Activities targetFileActivity = fileActivityRepo.findBySaasFileId(Objects.requireNonNull(targetFile).getSaasFileId()).orElse(null);
-        String tmp_file_name = Objects.requireNonNull(targetFileActivity).getFileName();
-        if (!tmp_file_name.equals(file_name)) {
-            log.error("File name not matched: id={}, name={}", idx, file_name);
-            return false;
-        }
-        if (orgSaaSRepo.findSaaSIdById(targetFile.getOrgSaaS().getId()) != 1) {
-            log.error("File is not a Slack file: id={}, saasId={}", idx, targetFile.getOrgSaaS().getId());
+
+    private boolean checkFile(int idx, String file_name, String path) throws SlackApiException, IOException {
+
+        try {
+            FileUploadTable targetFile = fileUploadRepository.findById(idx).orElse(null);
+            Activities targetFileActivity = fileActivityRepo.findBySaasFileId(Objects.requireNonNull(targetFile).getSaasFileId()).orElse(null);
+            String tmp_file_name = Objects.requireNonNull(targetFileActivity).getFileName();
+            if (!tmp_file_name.equals(file_name)) {
+                log.error("File name not matched: id={}, name={}", idx, file_name);
+                return false;
+            }
+            if (orgSaaSRepo.findSaaSIdById(targetFile.getOrgSaaS().getId()) != 1) {
+                log.error("File is not a Slack file: id={}, saasId={}", idx, targetFile.getOrgSaaS().getId());
+                return false;
+            }
+            if (!slackApiService.isExistFile(targetFileActivity.getSaasFileId(), targetFile.getOrgSaaS().getId())){
+                log.error("File not found in Slack: id={}, saasId={}", idx, targetFile.getOrgSaaS().getId());
+                return false;
+            }
+        } catch (RuntimeException e) {
+            log.error("Error checking file: id={}, name={}", idx, file_name, e);
             return false;
         }
         return true;
     }
+
+
     private boolean shouldSkipFile(File file) {
         return "quip".equalsIgnoreCase(file.getMode()) ||
                 "캔버스".equalsIgnoreCase(file.getPrettyType()) ||

@@ -82,6 +82,12 @@ public class SlackApiService {
         }
     }
 
+    public Boolean isExistFile(String fileId, int workspaceId) throws IOException, SlackApiException {
+        token = aesUtil.decrypt(fileUtil.getToken(workspaceId),key);
+        com.slack.api.methods.response.files.FilesInfoResponse filesInfoResponse = slack.methods(token).filesInfo(r -> r.file(fileId));
+        return filesInfoResponse.isOk();
+    }
+
     // conversations.info API호출 메서드
     public Conversation fetchConversationInfo(String channelId, OrgSaaS orgSaaSObject) throws IOException, SlackApiException {
         token = aesUtil.decrypt(fileUtil.tokenSelector(orgSaaSObject),key);
