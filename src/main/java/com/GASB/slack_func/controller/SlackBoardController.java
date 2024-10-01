@@ -295,9 +295,8 @@ public class SlackBoardController {
             for (Map<String, String> request : slack_request) {
                 int fileUploadTableIdx = Integer.parseInt(request.get("id"));
                 String file_name = request.get("file_name");
-                String path = request.get("path");
                 // 파일 삭제 시도
-                if (!slackFileService.fileDelete(fileUploadTableIdx, file_name, path)) {
+                if (!slackFileService.fileDelete(fileUploadTableIdx, file_name)) {
                     allSuccess = false;
                     log.error("Failed to delete file with id: {}", fileUploadTableIdx);
                 }
