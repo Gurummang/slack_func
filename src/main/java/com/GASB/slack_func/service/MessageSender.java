@@ -40,11 +40,6 @@ public class MessageSender {
         log.info("Sent message to grouping queue: " + message);
     }
 
-    public void sendMessageToQueue(Long message, String queueName) {
-        rabbitTemplate.convertAndSend(queueName, message);
-        log.info("Sent message to queue " + queueName + ": " + message);
-    }
-
     public void sendO365DeleteMessage(List<Map<String,String>> message) {
         o365deleteTemplate.convertAndSend(message);
         log.info("Sent message to o365 delete queue: " + message);
