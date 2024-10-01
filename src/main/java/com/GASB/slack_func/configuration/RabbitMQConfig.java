@@ -80,6 +80,11 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(googleDriveInitQueue).to(exchange).with(googleDriveDeleteRoutingKey);
     }
 
+    @Bean
+    Binding googleDriveDeleteQueueBinding(@Qualifier("googleDriveDeleteQueue") Queue googleDriveDeleteQueue, DirectExchange exchange) {
+        return BindingBuilder.bind(googleDriveDeleteQueue).to(exchange).with(googleDriveDeleteRoutingKey);
+    }
+
     // 교환기(Exchange) 설정
     @Bean
     DirectExchange exchange() {
@@ -91,12 +96,6 @@ public class RabbitMQConfig {
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
-
-
-
-
-
-
 
     // RabbitTemplate 설정 (기본 라우팅 키 사용)
     @Bean
