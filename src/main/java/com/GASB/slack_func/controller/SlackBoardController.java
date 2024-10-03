@@ -263,7 +263,7 @@ public class SlackBoardController {
             if (servletRequest.getAttribute("error") != null) {
                 String errorMessage = (String) servletRequest.getAttribute("error");
                 Map<String, String> errorResponse = new HashMap<>();
-                log.error("Error fetching user ranking in user-ranking api: {}", errorMessage);
+                log.error("Error fetching delete api: {}", errorMessage);
                 errorResponse.put("status", "401");
                 errorResponse.put("error_message", errorMessage);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
