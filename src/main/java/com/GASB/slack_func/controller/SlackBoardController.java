@@ -263,7 +263,7 @@ public class SlackBoardController {
             if (servletRequest.getAttribute("error") != null) {
                 String errorMessage = (String) servletRequest.getAttribute("error");
                 Map<String, String> errorResponse = new HashMap<>();
-                log.error("Error fetching user ranking in user-ranking api: {}", errorMessage);
+                log.error("Error fetching delete api: {}", errorMessage);
                 errorResponse.put("status", "401");
                 errorResponse.put("error_message", errorMessage);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
@@ -276,6 +276,13 @@ public class SlackBoardController {
 
             boolean allSuccess = true;
 
+            // requests null체크
+            if (requests == null || requests.isEmpty()) {
+                response.put("status", "400");
+                response.put("message", "Request body is empty");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             for (Map<String,String> each : requests){
                 switch (each.get("saas")){
                     case "slack" -> slack_request.add(each);
@@ -284,13 +291,11 @@ public class SlackBoardController {
                 }
             }
 
-
-            if (slack_request.size() == 0 ){
+            if (slack_request.isEmpty() && o365_request.isEmpty() && google_drive_request.isEmpty()) {
                 response.put("status", "400");
-                response.put("message", "No slack files to delete");
+                response.put("message", "No valid requests found");
                 return ResponseEntity.badRequest().body(response);
             }
-
             // 요청 받은 파일 목록 처리
             for (Map<String, String> request : slack_request) {
                 int fileUploadTableIdx = Integer.parseInt(request.get("id"));
