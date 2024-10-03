@@ -276,6 +276,13 @@ public class SlackBoardController {
 
             boolean allSuccess = true;
 
+            // requests null체크
+            if (requests == null || requests.isEmpty()) {
+                response.put("status", "400");
+                response.put("message", "Request body is empty");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             for (Map<String,String> each : requests){
                 switch (each.get("saas")){
                     case "slack" -> slack_request.add(each);
@@ -284,13 +291,11 @@ public class SlackBoardController {
                 }
             }
 
-
-            if (slack_request.size() == 0 ){
+            if (slack_request.isEmpty() && o365_request.isEmpty() && google_drive_request.isEmpty()) {
                 response.put("status", "400");
-                response.put("message", "No slack files to delete");
+                response.put("message", "No valid requests found");
                 return ResponseEntity.badRequest().body(response);
             }
-
             // 요청 받은 파일 목록 처리
             for (Map<String, String> request : slack_request) {
                 int fileUploadTableIdx = Integer.parseInt(request.get("id"));
