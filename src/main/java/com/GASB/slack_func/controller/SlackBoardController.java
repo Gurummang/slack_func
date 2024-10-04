@@ -287,7 +287,7 @@ public class SlackBoardController {
                 switch (each.get("saas")){
                     case "slack" -> slack_request.add(each);
                     case "o365" -> o365_request.add(each);
-                    case "google-drive" -> google_drive_request.add(each);
+                    case "GoogleDrive" -> google_drive_request.add(each);
                 }
             }
 
