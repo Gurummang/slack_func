@@ -41,7 +41,7 @@ public class SlackUserService {
             OrgSaaS orgSaaSObject = orgSaaSRepo.findById(workspace_config_id)
                     .orElseThrow(() -> new IllegalArgumentException("OrgSaas not found with spaceId: " + workspace_config_id));
             try {
-                slackUsers = slackApiService.fetchUsers(workspace_config_id).stream().filter(user -> !user.isBot()).collect(Collectors.toList());
+                slackUsers = slackApiService.fetchUsers(workspace_config_id).stream().filter(user -> !user.isBot() && user.getRealName() != null && !user.getRealName().equals("SlackBot")).collect(Collectors.toList());
             } catch (IOException | SlackApiException e) {
                 throw new RuntimeException(e);
             }
