@@ -2,25 +2,30 @@ package com.GASB.slack_func.service.file;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 
-@Service
+@Component
 @Slf4j
 public class FileEncUtil {
 
     @Value("${file.aes.key}")
-    private String file_key;
+    private String fileEncAESkey;
 
     @Value("${file.enc.basepath}")
     private String basePath;
+
+    @Value("${file.aes.iv}")
+    private String aesIv;
     // 파일 암호화
     public Path encryptAndSaveFile(String sourceFilePath) throws Exception {
 
@@ -30,7 +35,7 @@ public class FileEncUtil {
         byte[] fileContent = readFileContent(sourceFilePath);
 
         // 파일 암호화
-        byte[] encryptedContent = encryptFile(fileContent, file_key);
+        byte[] encryptedContent = encryptFile(fileContent);
 
         // 암호화된 파일 저장
         return saveFileContent(encryptedContent, fileName);
@@ -55,15 +60,26 @@ public class FileEncUtil {
         return Files.readAllBytes(path);
     }
 
-    public byte[] encryptFile(byte[] content, String base64Key) throws Exception {
-        // String 키를 SecretKey로 변환
-        byte[] decodedKey = Base64.getDecoder().decode(base64Key); // Base64 인코딩된 키 디코딩
-        SecretKeySpec secretKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
+    private byte[] encryptFile(byte[] content) throws Exception {
+        byte[] decodeKey = Base64.getDecoder().decode(fileEncAESkey);
+        SecretKeySpec secretKeySpec = new SecretKeySpec(decodeKey, "AES");
 
-        // AES 암호화 설정 및 암호화
-        Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-        return cipher.doFinal(content);
+
+        // 초기화 벡터 생성
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
+        byte[] iv = aesIv.getBytes();
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
+
+        cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivParameterSpec);
+        byte[] result = cipher.doFinal(content);
+
+        ByteArrayOutputStream ouputStream = new ByteArrayOutputStream();
+        ouputStream.write(iv);
+        ouputStream.write(result);
+
+        return ouputStream.toByteArray();
+
     }
 
 }
