@@ -1,10 +1,7 @@
 package com.GASB.slack_func.service.file;
 
 import lombok.RequiredArgsConstructor;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -14,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
-import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -26,68 +23,75 @@ import java.util.Base64;
 public class FileDecUtil {
 
     @Value("${file.aes.key}")
-    private String file_key;
-
-    @Value("${file.dec.basepath}")
-    private String basePath;
+    private String fileEncAESkey;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
 
     private final S3Client s3Client;
 
+    // S3에서 파일을 스트리밍으로 다운로드 후 바로 복호화하는 메서드
+    public byte[] decryptFileFromS3(String objectKey) throws Exception {
+        if (objectKey == null || fileEncAESkey == null) {
+            throw new IllegalArgumentException("objectKey나 AES 키는 null일 수 없습니다.");
+        }
 
+        // S3에서 스트리밍으로 파일 다운로드
+        try (InputStream s3InputStream = downloadFile(bucketName, objectKey);
+             CipherInputStream cipherInputStream = createDecryptionStream(s3InputStream)) {
 
+            log.info("S3에서 파일을 성공적으로 다운로드 및 복호화 중입니다. 파일 키: {}", objectKey);
 
-    /**
-     * 파일을 S3에서 받아 복호화한 후 메모리에 저장하는 메서드
-     * @param bucketName S3 버킷 이름
-     * @param objectKey S3 객체 키
-     * @return 복호화된 파일의 바이트 배열
-     * @throws Exception
-     */
-    public byte[] decryptFileFromS3(String bucketName, String objectKey) throws Exception {
-        InputStream s3InputStream = getS3ObjectInputStream(bucketName, objectKey);
-        CipherInputStream cipherInputStream = createDecryptionStream(s3InputStream, file_key);
-        return convertStreamToByteArray(cipherInputStream);
+            // 복호화된 데이터를 바이트 배열로 변환
+            return convertStreamToByteArray(cipherInputStream);
+        }
     }
 
-    private InputStream getS3ObjectInputStream(String bucketName, String objectKey) {
-        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucketName)
-                .key(objectKey)
-                .build();
+    private CipherInputStream createDecryptionStream(InputStream inputStream) throws Exception {
+        SecretKey decodeKey = decodeKeyFromBase64(fileEncAESkey);
+        Cipher cipher = Cipher.getInstance("AES");  // AES/ECB 모드 사용
+        cipher.init(Cipher.DECRYPT_MODE, decodeKey);
 
-        ResponseInputStream<GetObjectResponse> s3InputStream = s3Client.getObject(getObjectRequest);
-        return s3InputStream;
+        return new CipherInputStream(inputStream, cipher);  // 복호화 스트림 반환
     }
 
-    private CipherInputStream createDecryptionStream(InputStream inputStream, String aesKey) throws Exception {
-        byte[] decodeKey = Base64.getDecoder().decode(aesKey);
-        SecretKeySpec secretKeySpec = new SecretKeySpec(decodeKey, "AES");
-
-        byte[] iv = new byte[16];
-        inputStream.read(iv);
-
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec);
-
-        return new CipherInputStream(inputStream, cipher);
+    // Base64로 인코딩된 AES 키를 복원하는 메서드
+    public static SecretKey decodeKeyFromBase64(String base64Key) {
+        if (base64Key == null || base64Key.isEmpty()) {
+            throw new IllegalArgumentException("복원할 Base64 인코딩된 키가 없습니다.");
+        }
+        byte[] decodedKey = Base64.getDecoder().decode(base64Key);
+        return new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
     }
 
+    // 스트리밍 데이터를 바이트 배열로 변환
     private byte[] convertStreamToByteArray(InputStream inputStream) throws Exception {
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192];
+            byte[] buffer = new byte[8192]; // 8KB 버퍼
             int bytesRead;
-
-            // 스트리밍 데이터를 ByteArrayOutputStream에 누적
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 byteArrayOutputStream.write(buffer, 0, bytesRead);
             }
-
             return byteArrayOutputStream.toByteArray();
+        }
+    }
+
+    // S3에서 스트리밍 방식으로 파일을 다운로드
+    public InputStream downloadFile(String bucketName, String key) {
+        try {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build();
+
+            ResponseInputStream<GetObjectResponse> s3InputStream = s3Client.getObject(getObjectRequest);
+            log.info("S3 파일 스트리밍 시작. 버킷: {}, 키: {}", bucketName, key);
+            return s3InputStream;
+
+        } catch (RuntimeException e) {
+            log.error("S3에서 파일 다운로드 실패. 버킷: {}, 키: {}, 오류: {}",
+                    bucketName, key, e.getMessage(), e);
+            throw e;
         }
     }
 }
