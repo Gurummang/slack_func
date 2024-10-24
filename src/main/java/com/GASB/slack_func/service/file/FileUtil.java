@@ -61,8 +61,13 @@ public class FileUtil {
     private final ScanUtil scanUtil;
     private final MessageSender messageSender;
 
+    private final FileEncUtil fileEncUtil;
     @Autowired
-    public FileUtil(SlackFileRepository storedFilesRepository, FileUploadRepository fileUploadRepository, FileActivityRepo activitiesRepository, SlackUserRepo slackUserRepo, SlackChannelRepository slackChannelRepository, SlackFileMapper slackFileMapper, RestTemplate restTemplate, S3Client s3Client, WorkspaceConfigRepo worekSpaceRepo, ScanUtil scanUtil, MessageSender messageSender) {
+    public FileUtil(SlackFileRepository storedFilesRepository, FileUploadRepository fileUploadRepository, FileActivityRepo activitiesRepository,
+                    SlackUserRepo slackUserRepo, SlackChannelRepository slackChannelRepository,
+                    SlackFileMapper slackFileMapper, RestTemplate restTemplate, S3Client s3Client,
+                    WorkspaceConfigRepo worekSpaceRepo, ScanUtil scanUtil, MessageSender messageSender,
+                    FileEncUtil fileEncUtil) {
         this.storedFilesRepository = storedFilesRepository;
         this.fileUploadRepository = fileUploadRepository;
         this.activitiesRepository = activitiesRepository;
@@ -74,6 +79,7 @@ public class FileUtil {
         this.worekSpaceRepo = worekSpaceRepo;
         this.scanUtil = scanUtil;
         this.messageSender = messageSender;
+        this.fileEncUtil = fileEncUtil;
     }
 
     @Value("${aws.s3.bucket}")
@@ -339,19 +345,28 @@ public class FileUtil {
         return filePath.toString();
     }
 
+
     private void uploadFileToS3(String filePath, String s3Key) {
+
+        //암호화 진행
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(s3Key)
                     .build();
-
-            s3Client.putObject(putObjectRequest, Paths.get(filePath));
+            // 암호화한 파일을 업로드
+            s3Client.putObject(putObjectRequest, fileEncUtil.encryptAndSaveFile(filePath));
             log.info("File uploaded successfully to S3: {}", s3Key);
         } catch (RuntimeException e) {
             log.error("Error uploading file to S3: {}", e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            deleteFileInLocal(filePath);
         }
     }
+
+
 
     private String fetchChannelName(String channelId) {
         if (channelId == null) return "unknown_channel";
